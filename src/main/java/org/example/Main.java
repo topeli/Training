@@ -36,7 +36,7 @@ public class Main {
         }
         HashSet<String> set = new HashSet<>();
         set.add("Hello world!");
-
+        System.out.println("Hi!");
         System.out.println();
         System.out.println(set);
         System.out.println("Hello students!!!");
