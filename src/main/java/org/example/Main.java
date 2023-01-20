@@ -38,6 +38,7 @@ public class Main {
         set.add("Hello world!");
         System.out.println("Hi!");
         System.out.println();
+        System.out.println(5);
         System.out.println(set);
         System.out.println("Hello students!!!");
     }
