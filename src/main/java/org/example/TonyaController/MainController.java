@@ -14,6 +14,6 @@ public class MainController
     public MainController(RectangleService rectangleService) {
         this.rectangleService = rectangleService;
     }
-    @PostMapping("/Rectangle")
-    public int Rectangle(@RequestBody Rectangle rec) {return rectangleService.Rectangle(rec);}
+    @PostMapping("/rectangle")
+    public int Rectangle(@RequestBody Rectangle rec) {return rectangleService.rectangle(rec);}
 }
