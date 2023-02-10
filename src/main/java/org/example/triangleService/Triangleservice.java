@@ -1,6 +1,7 @@
 package org.example.triangleService;
 
-import org.example.models.vikaHW;
+import org.example.models.Triangle;
+//import org.example.models.vikaHW;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,9 @@ public class Triangleservice {
     }
 
 
-    public int area(vikaHW triangle) {
-        return triangle.a * triangle.b /2;
+    public int area(Triangle triangle) {
+
+        return triangle.getA() * triangle.getB() / 2;
+        triangleRepository.save(triangle);
     }
 }
