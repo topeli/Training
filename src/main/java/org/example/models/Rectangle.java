@@ -1,24 +1,20 @@
 package org.example.models;
-import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+
 @Table (name = "rectangle")
+@Entity
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Rectangle {
-     int a;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+    private int a;
+    private int b;
 
-    public int getB() {
-        return b;
-    }
-
-    public void setB(int b) {
-        this.b = b;
-    }
-
-    int b;
-
-    public int getA() {
-        return a;
-    }
-
-    public void setA(int a) {
-        this.a = a;
-    }
 }

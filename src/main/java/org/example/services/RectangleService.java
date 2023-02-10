@@ -1,8 +1,9 @@
 package org.example.services;
 
 import org.example.models.Rectangle;
-import org.example.models.Student;
 import org.example.repositories.RectangleRepository;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Service;
 
 @ComponentScan("com.example.demo.services")
 @Service
@@ -13,9 +14,7 @@ public class RectangleService {
     }
 
     public int rectangle(Rectangle rec) {
+        rectangleRepository.save(rec);
         return rec.getA() * rec.getB();
-    }
-    public void addRectangle(Rectangle rec) {
-        RectangleRepository.save(rec);
     }
 }
