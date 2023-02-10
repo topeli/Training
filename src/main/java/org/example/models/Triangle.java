@@ -1,25 +1,23 @@
 package org.example.models;
 
-import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
 
 @Table(name="triangles")
+@Entity
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+
 public class Triangle {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
     private int a;
     private int b;
 
-    public int getA() {
-        return a;
-    }
 
-    public void setA(int a) {
-        this.a = a;
-    }
-
-    public int getB() {
-        return b;
-    }
-
-    public void setB(int b) {
-        this.b = b;
-    }
 }

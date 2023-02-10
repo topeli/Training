@@ -1,7 +1,6 @@
-package org.example.vikaController;
+package org.example.controllers.vikaController;
 
 import org.example.models.Triangle;
-//import org.example.models.vikaHW;
 import org.example.triangleService.Triangleservice;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.bind.annotation.*;
@@ -9,10 +8,10 @@ import org.springframework.web.bind.annotation.*;
 @ComponentScan("com.example.demo.controllers")
 @RestController
 @RequestMapping("/telegram")
-public class MainController {
+public class TriangleController {
     private final Triangleservice triangleservice;
 
-    public MainController(Triangleservice triangleservice) {
+    public TriangleController(Triangleservice triangleservice) {
         this.triangleservice = triangleservice;
     }
 

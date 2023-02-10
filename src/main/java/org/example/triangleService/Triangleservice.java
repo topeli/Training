@@ -1,22 +1,22 @@
 package org.example.triangleService;
 
 import org.example.models.Triangle;
-//import org.example.models.vikaHW;
+import org.example.repositories.trianglerepository.TriangleRepository;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 
 @ComponentScan("org.example.triangleService")
 @Service
 public class Triangleservice {
-    private final triangleRepository triangleRepository;
-    public Triangleservice(triangleRepository triangleRepository){
+    private final TriangleRepository triangleRepository;
+    public Triangleservice(TriangleRepository triangleRepository){
         this.triangleRepository = triangleRepository;
     }
 
 
     public int area(Triangle triangle) {
-
-        return triangle.getA() * triangle.getB() / 2;
         triangleRepository.save(triangle);
+        return triangle.getA() * triangle.getB() / 2;
+
     }
 }
