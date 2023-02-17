@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 public class TrainingService {
     private final TrainingRepository trainingRepository;
 
-    public TrainingService(TrainingRepository trainingRepository, TrainingRepository trainingRepository1) {
-        this.trainingRepository = trainingRepository1;
+    public TrainingService(TrainingRepository trainingRepository) {
+        this.trainingRepository = trainingRepository;
     }
 
     public void addTraining(Training training) {

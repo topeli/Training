@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Training {
-    @Id
     private Long group_id;
+    @Id
+    private Long training_id;
     private Long coach_id;
     private LocalDateTime start_time;
     private LocalDateTime end_time;
