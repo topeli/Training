@@ -18,3 +18,4 @@ public class CoachController {
         coachService.addCoach(coach);
     }
 }
+
