@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/telegram")
-public class MainController {
+public class StudentController {
 
     /*
         Модификатор final
@@ -19,11 +19,11 @@ public class MainController {
      */
     private final StudentService studentService;
 
-    public MainController(StudentService studentService) {
+    public StudentController(StudentService studentService) {
         this.studentService = studentService;
     }
 
-    @PostMapping("/add")
+    @PostMapping("/add/student")
     public void addStudent(@RequestBody Student student) { // RequestBody можно добавить потом (чтобы показать, что создастся null)
         studentService.addStudent(student);
     }
