@@ -21,4 +21,10 @@ public class MarkController {
                         @RequestBody Mark mark) throws Exception {
         markService.addMark(mark, studentId);
     }
+
+    @PostMapping("/add/{coachId}/mark")
+    public void addMark_coach(@PathVariable(value = "coachId") Long coachId,
+                              @RequestBody Mark mark) throws Exception{
+        markService.addMark(mark, coachId);
+    }
 }
