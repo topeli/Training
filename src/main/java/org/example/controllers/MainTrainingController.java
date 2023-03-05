@@ -18,13 +18,13 @@ public class MainTrainingController {
     @PostMapping("/add/{coachId}/training")
     public void addTrainingCoach(@PathVariable(value = "coachId") Long coachId,
                             @RequestBody Training training) throws Exception {
-        trainingService.addTraining(training, coachId);
+        trainingService.addTrainingCoach(training, coachId);
     }
 
     @PostMapping("/add/{studentId}/training")
-    public void addTraining(@PathVariable(value = "studentId") Long studentId,
+    public void addTrainingStudent(@PathVariable(value = "studentId") Long studentId,
                             @RequestBody Training training) throws Exception {
-        trainingService.addTraining(training, studentId);
+        trainingService.addTrainingStudent(training, studentId);
     }
 
 
