@@ -8,6 +8,8 @@ import org.example.repositories.StudentRepository;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @ComponentScan("org.example.services")
 @Service
 public class MarkService {
@@ -22,17 +24,11 @@ public class MarkService {
         this.coachRepository = coachRepository;
     }
 
-    public void addMark(Mark mark, Long studentId) throws Exception {
+    public void addMark(Mark mark, Long studentId, Long coachId) throws Exception {
         Student student = studentRepository.findById(studentId).orElseThrow(() -> new Exception("студент не найден"));
         mark.setStudent(student);
-        markRepository.save(mark);
-    }
-
-    public void addMark_coach(Mark mark, Long coachId) throws Exception{
-        Coach coach = coachRepository.findById(coachId).orElseThrow(() -> new Exception("тренер не найден"));
+        Coach coach = coachRepository.findById(coachId).orElseThrow(() -> new Exception("тренер не найден"));;
         mark.setCoach(coach);
         markRepository.save(mark);
     }
-
-
 }
