@@ -28,6 +28,5 @@ public class Mark {
     @JoinColumn(name = "coach_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Coach coach;
-    private Long coach_id;
     private int mark;
 }

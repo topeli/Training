@@ -16,7 +16,7 @@ public class MarkController {
         this.markService = markService;
     }
 
-    @PostMapping("/add/{studentId}{coachId}/mark")
+    @PostMapping("/add/{studentId}/{coachId}/mark")
     public void addMark(@PathVariable(value = "studentId")Long studentId, @PathVariable(value = "coachId") Long coachId,
                         @RequestBody Mark mark)
             throws Exception {
