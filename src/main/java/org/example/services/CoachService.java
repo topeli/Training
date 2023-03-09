@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 public class CoachService {
     private final CoachRepository coachRepository;
 
+
     public CoachService(CoachRepository coachRepository) {
         this.coachRepository = coachRepository;
     }

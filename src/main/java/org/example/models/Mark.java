@@ -8,7 +8,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 import javax.persistence.*;
-@EntityScan("com.example.demo.model")
+@EntityScan("org.example.models")
 @Entity
 @Table(name="marks")
 @Getter
@@ -24,7 +24,9 @@ public class Mark {
     @JoinColumn(name = "student_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Student student;
-
-    private Long coach_id;
+    @ManyToOne(fetch = FetchType.EAGER,optional = false)
+    @JoinColumn(name = "coach_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Coach coach;
     private int mark;
 }
