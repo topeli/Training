@@ -21,12 +21,9 @@ public class TrainingService {
         this.coachRepository = coachRepository;
     }
 
-    public void addTrainingStudent(Training training, Long studentId) throws Exception {
+    public void addTraining(Training training, Long studentId, Long coachId) throws Exception {
         Student student = studentRepository.findById(studentId).orElseThrow(() -> new Exception("студент не найден"));
         training.setStudent(student);
-        trainingRepository.save(training);
-    }
-    public void addTrainingCoach(Training training, Long coachId) throws Exception{
         Coach coach = coachRepository.findById(coachId).orElseThrow(() -> new Exception("тренер не найден"));
         training.setCoach(coach);
         trainingRepository.save(training);

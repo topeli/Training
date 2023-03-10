@@ -17,19 +17,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Training {
-    private Long group_id;
+    private Long groupId;
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long training_id;
+    private Long trainingId;
     @ManyToOne(fetch = FetchType.EAGER,optional = false)
-    @JoinColumn(name = "student_id", nullable = false)
-    @JoinColumn(name = "coach_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "studentId", nullable = false)
     private Student student;
-    private Long coach_id;
-    private LocalDateTime start_time;
-    private LocalDateTime end_time;
-
-    public void setCoach(Coach coach) {
-    }
+    @JoinColumn(name = "coachId", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Coach coach;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 }

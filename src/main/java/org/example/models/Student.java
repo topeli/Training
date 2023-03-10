@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Student {
-    @Id // сразу не добавлять - показать, что класс будет подчеркиваться красным
+    @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String name;

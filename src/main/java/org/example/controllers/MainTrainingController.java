@@ -13,18 +13,10 @@ public class MainTrainingController {
     public MainTrainingController(TrainingService trainingService) {
         this.trainingService = trainingService;
     }
-
-
-    @PostMapping("/add/{coachId}/training")
-    public void addTrainingCoach(@PathVariable(value = "coachId") Long coachId,
+    @PostMapping("/add/{studentId}/{coachId}/training")
+    public void addTraining(@PathVariable(value = "studentId") Long studentId, @PathVariable(value = "coachId") Long coachId,
                             @RequestBody Training training) throws Exception {
-        trainingService.addTrainingCoach(training, coachId);
-    }
-
-    @PostMapping("/add/{studentId}/training")
-    public void addTrainingStudent(@PathVariable(value = "studentId") Long studentId,
-                            @RequestBody Training training) throws Exception {
-        trainingService.addTrainingStudent(training, studentId);
+        trainingService.addTraining(training, studentId, coachId);
     }
 
 
