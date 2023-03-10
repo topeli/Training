@@ -2,6 +2,7 @@ package org.example.models;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 import javax.persistence.*;
@@ -9,6 +10,7 @@ import javax.persistence.*;
 @Entity
 @Table(name="coaches")
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Coach {

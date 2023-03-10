@@ -1,11 +1,10 @@
 package org.example.controllers;
+
 import org.example.models.Training;
 import org.example.models.Training;
 import org.example.services.TrainingService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 @RestController
 @RequestMapping("/telegram")
 public class MainTrainingController {
@@ -14,10 +13,11 @@ public class MainTrainingController {
     public MainTrainingController(TrainingService trainingService) {
         this.trainingService = trainingService;
     }
-
-
-    @PostMapping("/add/training")
-    public void addTraining(@RequestBody Training training) { // RequestBody можно добавить потом (чтобы показать, что создастся null)
-        trainingService.addTraining(training);
+    @PostMapping("/add/{studentId}/{coachId}/training")
+    public void addTraining(@PathVariable(value = "studentId") Long studentId, @PathVariable(value = "coachId") Long coachId,
+                            @RequestBody Training training) throws Exception {
+        trainingService.addTraining(training, studentId, coachId);
     }
+
+
 }
