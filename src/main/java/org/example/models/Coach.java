@@ -18,6 +18,11 @@ public class Coach {
     private String name;
     private String surname;
     private Long age;
-    private Long experience;
+
+    public Coach(String name, String surname, int i) {
+        this.name = name;
+        this.surname=surname;
+        this.age = age;
+    }
 }
 
