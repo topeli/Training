@@ -1,6 +1,7 @@
 package org.example.bot;
 
 import org.example.controllers.CoachController;
+import org.example.controllers.MarkController;
 import org.example.controllers.StudentController;
 import org.example.models.Coach;
 import org.example.models.Mark;
@@ -18,11 +19,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final TelegramConfig telegramConfig;
     private final StudentController studentController;
     private final CoachController coachController;
+    private final MarkController markController;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController, MarkController markController) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
         this.coachController = coachController;
+        this.markController = markController;
     }
 
     @Override
@@ -57,11 +60,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/getStudents":
                     getAllStudents(chatId);
                     break;
+                case "/addMark":
+                    try {
+                        addMark(chatId, new Student("Антон", "Кисляков", 21, "10-3"), new Coach("Антон", "Кисляков", 21L, 2L));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                case "/getMarks":
+                    getAllMarks(chatId);
                 default:
                     sendMessage(chatId, "То что вы присали не соответствует ни одной команде");
-
             }
-
         }
     }
 
@@ -104,6 +113,19 @@ public class TelegramBot extends TelegramLongPollingBot {
         String text = "";
         for(int i = 0; i<coaches.size(); i++){
             text += coaches.get(i).getName() + " " + coaches.get(i).getSurname() + " " + coaches.get(i).getAge()  + " " + coaches.get(i).getExperience() + '\n';
+        }
+        sendMessage(chatId, text);
+    }
+    private void addMark(Long chatId, Student student, Coach coach) throws Exception {
+        Mark mark = new Mark(5, student, coach );
+        markController.addMark(student.getId(), coach.getId(), mark);
+        sendMessage(chatId, "Оценка сохранена");
+    }
+    private void getAllMarks(Long chatId){
+        List<Mark> marks = markController.getAllMarks();
+        String text = "";
+        for(int i = 0; i<marks.size(); i++){
+            text += marks.get(i).getMark() + " " + marks.get(i).getStudent() + " " +  marks.get(i).getCoach() + '\n';
         }
         sendMessage(chatId, text);
     }

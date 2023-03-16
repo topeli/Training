@@ -10,12 +10,6 @@ import java.util.List;
 @RequestMapping("/telegram")
 public class StudentController {
 
-    /*
-        Модификатор final
-        Для ссылочных переменных это означает,
-        что после присвоения объекта, нельзя изменить ссылку на данный объект.
-        Это важно! Ссылку изменить нельзя, но состояние объекта изменять можно.
-     */
     private final StudentService studentService;
 
     public StudentController(StudentService studentService) {

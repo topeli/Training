@@ -29,4 +29,10 @@ public class Mark {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Coach coach;
     private int mark;
+
+    public Mark(int mark, Student student, Coach coach) {
+        this.coach = coach;
+        this.mark = mark;
+        this.student = student;
+    }
 }

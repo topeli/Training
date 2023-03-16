@@ -32,4 +32,11 @@ public class MarkService {
         mark.setCoach(coach);
         markRepository.save(mark);
     }
+
+    public List<Mark> getAllMarks() {
+        return markRepository.findAll();
+    }
+    public void addMark(Mark mark) {
+        markRepository.save(mark);
+    }
 }
