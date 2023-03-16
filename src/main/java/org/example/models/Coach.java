@@ -19,5 +19,11 @@ public class Coach {
     private String surname;
     private Long age;
     private Long experience;
-}
 
+    public Coach(String name, String surname, Long age, Long e) {
+        this.name = name;
+        this.surname=surname;
+        this.age = age;
+        this.experience = e;
+    }
+}

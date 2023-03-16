@@ -8,6 +8,7 @@ import org.example.repositories.StudentRepository;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @ComponentScan("org.example.services")
