@@ -36,13 +36,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.markService = markService;
 
         List<BotCommand> listOfCommands = new ArrayList<>();
-        listOfCommands.add(new BotCommand("/start", "Начать работу"));
-        listOfCommands.add(new BotCommand("/addStudent", "Добавить студента"));
-        listOfCommands.add(new BotCommand("/addCoach", "Добавить тренера"));
-        listOfCommands.add(new BotCommand("/getStudents", "Вывести список студентов"));
-        listOfCommands.add(new BotCommand("/getCoaches", "Вывести список тренеров"));
-        listOfCommands.add(new BotCommand("/getMarks", "Вывести список оценок"));
-        listOfCommands.add(new BotCommand("/addMarks", "Добавить оценку"));
+        listOfCommands.add(new BotCommand("/start", "Start work"));
+        listOfCommands.add(new BotCommand("/addStudent", "Add student"));
+        listOfCommands.add(new BotCommand("/addCoach", "Add coach"));
+        listOfCommands.add(new BotCommand("/getStudents", "Show students list"));
+        listOfCommands.add(new BotCommand("/getCoaches", "Show coaches list"));
+        listOfCommands.add(new BotCommand("/getMarks", "Show marks list"));
+        listOfCommands.add(new BotCommand("/addMarks", "Add mark"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
         }
