@@ -9,10 +9,15 @@ import org.example.models.Student;
 import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -29,6 +34,19 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.coachController = coachController;
         this.markController = markController;
         this.markService = markService;
+
+        List<BotCommand> listOfCommands = new ArrayList<>();
+        listOfCommands.add(new BotCommand("/start", "Начать работу"));
+        listOfCommands.add(new BotCommand("/addStudent", "Добавить студента"));
+        listOfCommands.add(new BotCommand("/addCoach", "Добавить тренера"));
+        listOfCommands.add(new BotCommand("/getStudents", "Вывести список студентов"));
+        listOfCommands.add(new BotCommand("/getCoaches", "Вывести список тренеров"));
+        listOfCommands.add(new BotCommand("/getMarks", "Вывести список оценок"));
+        listOfCommands.add(new BotCommand("/addMarks", "Добавить оценку"));
+        try {
+            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
+        }
+        catch (TelegramApiException e) {}
     }
 
     @Override
