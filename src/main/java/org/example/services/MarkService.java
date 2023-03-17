@@ -25,11 +25,24 @@ public class MarkService {
         this.coachRepository = coachRepository;
     }
 
-    public void addMark(Mark mark, Long studentId, Long coachId) throws Exception {
-        Student student = studentRepository.findById(studentId).orElseThrow(() -> new Exception("студент не найден"));
-        mark.setStudent(student);
-        Coach coach = coachRepository.findById(coachId).orElseThrow(() -> new Exception("тренер не найден"));;
-        mark.setCoach(coach);
-        markRepository.save(mark);
+    public void addMark(int mark, String coachName, String studentName) throws Exception {
+        Mark mark1 = new Mark(mark);
+        try
+        {
+            Student student = studentRepository.findByName(studentName).get(0);
+            mark1.setStudent(student);
+        }
+        catch (Exception e){}
+        try
+        {
+            Coach coach = coachRepository.findByName(coachName).get(0);
+            mark1.setCoach(coach);
+        }
+        catch (Exception e){}
+        markRepository.save(mark1);
+    }
+
+    public List<Mark> getAllMarks() {
+        return markRepository.findAll();
     }
 }

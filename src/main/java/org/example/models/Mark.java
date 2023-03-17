@@ -29,4 +29,8 @@ public class Mark {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Coach coach;
     private int mark;
+
+    public Mark(int mark) {
+        this.mark = mark;
+    }
 }

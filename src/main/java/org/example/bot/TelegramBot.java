@@ -1,10 +1,12 @@
 package org.example.bot;
 
 import org.example.controllers.CoachController;
+import org.example.controllers.MarkController;
 import org.example.controllers.StudentController;
 import org.example.models.Coach;
 import org.example.models.Mark;
 import org.example.models.Student;
+import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -18,11 +20,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final TelegramConfig telegramConfig;
     private final StudentController studentController;
     private final CoachController coachController;
+    private final MarkController markController;
+    private final MarkService markService;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController, MarkController markController, MarkService markService) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
         this.coachController = coachController;
+        this.markController = markController;
+        this.markService = markService;
     }
 
     @Override
@@ -57,11 +63,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/getStudents":
                     getAllStudents(chatId);
                     break;
+                case "/addMark":
+                    try {
+                        addMark(chatId);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                case "/getMarks":
+                    getAllMarks(chatId);
                 default:
                     sendMessage(chatId, "То что вы присали не соответствует ни одной команде");
-
             }
-
         }
     }
 
@@ -104,6 +117,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         String text = "";
         for(int i = 0; i<coaches.size(); i++){
             text += coaches.get(i).getName() + " " + coaches.get(i).getSurname() + " " + coaches.get(i).getAge()  + " " + coaches.get(i).getExperience() + '\n';
+        }
+        sendMessage(chatId, text);
+    }
+    private void addMark(Long chatId) throws Exception {
+        markService.addMark(5, "Александр","Антон");
+        sendMessage(chatId, "Оценка сохранена");
+    }
+    private void getAllMarks(Long chatId){
+        List<Mark> marks = markController.getAllMarks();
+        String text = "";
+        for(int i = 0; i<marks.size(); i++){
+            text += marks.get(i).getMark() + " " + marks.get(i).getStudent() + " " +  marks.get(i).getCoach() + '\n';
         }
         sendMessage(chatId, text);
     }
