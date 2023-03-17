@@ -30,9 +30,7 @@ public class Mark {
     private Coach coach;
     private int mark;
 
-    public Mark(int mark, Student student, Coach coach) {
-        this.coach = coach;
+    public Mark(int mark) {
         this.mark = mark;
-        this.student = student;
     }
 }

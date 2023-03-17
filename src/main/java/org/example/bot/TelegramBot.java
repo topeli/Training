@@ -6,6 +6,7 @@ import org.example.controllers.StudentController;
 import org.example.models.Coach;
 import org.example.models.Mark;
 import org.example.models.Student;
+import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -20,12 +21,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final StudentController studentController;
     private final CoachController coachController;
     private final MarkController markController;
+    private final MarkService markService;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController, MarkController markController) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController, MarkController markController, MarkService markService) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
         this.coachController = coachController;
         this.markController = markController;
+        this.markService = markService;
     }
 
     @Override
@@ -62,10 +65,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 case "/addMark":
                     try {
-                        addMark(chatId, new Student("Антон", "Кисляков", 21, "10-3"), new Coach("Антон", "Кисляков", 21L, 2L));
+                        addMark(chatId);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
+                    break;
                 case "/getMarks":
                     getAllMarks(chatId);
                 default:
@@ -116,9 +120,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         sendMessage(chatId, text);
     }
-    private void addMark(Long chatId, Student student, Coach coach) throws Exception {
-        Mark mark = new Mark(5, student, coach );
-        markController.addMark(student.getId(), coach.getId(), mark);
+    private void addMark(Long chatId) throws Exception {
+        markService.addMark(5, "Александр","Антон");
         sendMessage(chatId, "Оценка сохранена");
     }
     private void getAllMarks(Long chatId){

@@ -19,18 +19,9 @@ public class MarkController {
         this.markService = markService;
     }
 
-    @PostMapping("/add/{studentId}/{coachId}/mark")
-    public void addMark(@PathVariable(value = "studentId")Long studentId, @PathVariable(value = "coachId") Long coachId,
-                        @RequestBody Mark mark)
-            throws Exception {
-        markService.addMark(mark, studentId, coachId);
-    }
     @GetMapping("/get/mark")
     public List<Mark> getAllMarks(){
         return markService.getAllMarks();
     }
-    @PostMapping ("/add/mark")
-    public void addMark(@RequestBody Mark mark) {
-        markService.addMark(mark);
-    }
+
 }
