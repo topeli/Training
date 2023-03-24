@@ -1,5 +1,6 @@
 package org.example.bot;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.controllers.CoachController;
 import org.example.controllers.MarkController;
 import org.example.controllers.StudentController;
@@ -9,13 +10,19 @@ import org.example.models.Student;
 import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
     private final TelegramConfig telegramConfig;
     private final StudentController studentController;
@@ -29,6 +36,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.coachController = coachController;
         this.markController = markController;
         this.markService = markService;
+        log.info("Начинаем добавлять меню");
+        List<BotCommand> listOfCommands = new ArrayList<>();
+        listOfCommands.add(new BotCommand("/start", "Start work"));
+        listOfCommands.add(new BotCommand("/add_student", "Add student"));
+        listOfCommands.add(new BotCommand("/add_coach", "Add coach"));
+        listOfCommands.add(new BotCommand("/get_students", "Show students list"));
+        listOfCommands.add(new BotCommand("/get_coaches", "Show coaches list"));
+        listOfCommands.add(new BotCommand("/get_marks", "Show marks list"));
+        listOfCommands.add(new BotCommand("/add_marks", "Add mark"));
+        try {
+            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
+            log.info("Успешно добавлены команды");
+        }
+        catch (TelegramApiException e) {
+            log.error("Ошибка при добавлении меню "+e.getMessage());
+        }
     }
 
     @Override
@@ -51,27 +74,28 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/start":
                     startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
                     break;
-                case "/addStudent":
+                case "/add_student":
                     addStudent(chatId);
                     break;
-                case "/addCoach":
+                case "/add_coach":
                     addCoach(chatId);
                     break;
-                case "/getCoaches":
+                case "/get_coaches":
                     getAllCoaches(chatId);
                     break;
-                case "/getStudents":
+                case "/get_students":
                     getAllStudents(chatId);
                     break;
-                case "/addMark":
+                case "/add_mark":
                     try {
                         addMark(chatId);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                     break;
-                case "/getMarks":
+                case "/get_marks":
                     getAllMarks(chatId);
+                    break;
                 default:
                     sendMessage(chatId, "То что вы присали не соответствует ни одной команде");
             }
