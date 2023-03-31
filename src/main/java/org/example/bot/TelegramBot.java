@@ -1,6 +1,5 @@
 package org.example.bot;
 
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.example.controllers.CoachController;
 import org.example.controllers.MarkController;
@@ -8,10 +7,10 @@ import org.example.controllers.StudentController;
 import org.example.models.Coach;
 import org.example.models.Mark;
 import org.example.models.Student;
+import org.example.repositories.StudentRepository;
 import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -24,19 +23,24 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
+    private final static ConcurrentHashMap<Long, Long> map = new ConcurrentHashMap<>();
+
     private final TelegramConfig telegramConfig;
     private final StudentController studentController;
+    private final StudentRepository studentRepository;
     private final CoachController coachController;
     private final MarkController markController;
     private final MarkService markService;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, CoachController coachController, MarkController markController, MarkService markService) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
+        this.studentRepository = studentRepository;
         this.coachController = coachController;
         this.markController = markController;
         this.markService = markService;
@@ -90,13 +94,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/get_students":
                     getAllStudents(chatId);
                     break;
-                case "/add_mark":
-                    try {
-                        addMark(chatId, 5);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    break;
                 case "/get_marks":
                     getAllMarks(chatId);
                     break;
@@ -110,14 +107,23 @@ public class TelegramBot extends TelegramLongPollingBot {
             String callbackData = update.getCallbackQuery().getData();
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
             Long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if (callbackData.equals("STUDENT")) {
-                String text = "Выбор оценки:";
+            if (callbackData.startsWith("STUDENT_")) {
+                Long studentId = extractStudentId(callbackData);
+
+                map.putIfAbsent(chatId, studentId);
+
+                Student student = studentRepository.findById(studentId).orElseThrow();
+                String text = "Выбор оценки (" + student.getName() + " " + student.getSurname() + "):";
+
                 executeEditMessageText(text, chatId, messageId);
+
                 chooseMark(chatId);
-            } else if (callbackData.equals("MARK")) {
+
+            } else if (callbackData.startsWith("MARK_")) {
                 try {
-                    String mark_ = callbackData;
-                    addMark(chatId, Integer.parseInt(mark_));//а как FFFFFFFFFFF
+                    Integer mark = extractMark(callbackData);
+                    Long studentId = map.get(chatId);
+                    addMark(mark, studentId);
                     String text = "Оценка сохранена";
                     executeEditMessageText(text, chatId, messageId);
                 } catch (Exception e) {
@@ -127,6 +133,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private Integer extractMark(String callbackData) {
+        return Integer.parseInt(callbackData.split("_")[1]);
+    }
+
+    private Long extractStudentId(String callbackData) {
+        return Long.parseLong(callbackData.split("_")[1]);
+    }
+
     private void chooseMark(Long chatId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -134,11 +148,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
-        int[] marks = new int[]{2, 3, 4, 5};
-        for (int i = 0; i < marks.length; i++) {
+        for (int i = 2; i < 6; i++) {
             InlineKeyboardButton mark = new InlineKeyboardButton();
-            mark.setText(String.valueOf(marks[i]));
-            mark.setCallbackData("MARK");
+            mark.setText(String.valueOf(i));
+            mark.setCallbackData("MARK_" + i);
             buttonsInLine.add(mark);
         }
         rowsInLine.add(buttonsInLine);
@@ -157,18 +170,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         message.setText("Кому вы хотите добавить оценку:");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
-        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         List<Student> students = studentController.getAllStudents();
         for (int i = 0; i < students.size(); i++) {
             InlineKeyboardButton student = new InlineKeyboardButton();
             student.setText(students.get(i).getName() + " " + students.get(i).getSurname());
-            student.setCallbackData("STUDENT");
-            buttonsInLine.add(student);
+            student.setCallbackData("STUDENT_" + students.get(i).getId());
+            rows.add(List.of(student));
         }
-        rowsInLine.add(buttonsInLine);
-        markup.setKeyboard(rowsInLine);
+        markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
         try {
             execute(message);
@@ -189,8 +200,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         }
     }
-
-
 
     private void startCommandRecieved(Long chatId, String firstName) {
         String answer = "Привет, " + firstName + "!";
@@ -239,9 +248,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, text);
     }
 
-    private void addMark(Long chatId, int mark) throws Exception {
-        markService.addMark(mark, "Александр", "Антон");
-        //sendMessage(chatId, "Оценка сохранена");
+    private void addMark(int mark, Long studentId) throws Exception {
+        markService.addMark(mark, "Антон", studentId);
     }
 
     private void getAllMarks(Long chatId) {

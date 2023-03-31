@@ -25,11 +25,11 @@ public class MarkService {
         this.coachRepository = coachRepository;
     }
 
-    public void addMark(int mark, String coachName, String studentName) throws Exception {
+    public void addMark(int mark, String coachName, Long studentId) throws Exception {
         Mark mark1 = new Mark(mark);
         try
         {
-            Student student = studentRepository.findByName(studentName).get(0);
+            Student student = studentRepository.findById(studentId).orElseThrow();
             mark1.setStudent(student);
         }
         catch (Exception e){}
