@@ -24,10 +24,12 @@ public class Mark {
     @JoinColumn(name = "student_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Student student;
+
     @ManyToOne(fetch = FetchType.EAGER,optional = false)
     @JoinColumn(name = "coach_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Coach coach;
+
     private int mark;
 
     public Mark(int mark) {
