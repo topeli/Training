@@ -52,8 +52,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/get_students", "Show students list"));
         listOfCommands.add(new BotCommand("/get_coaches", "Show coaches list"));
         listOfCommands.add(new BotCommand("/get_marks", "Show marks list"));
-        listOfCommands.add(new BotCommand("/add_marks", "Add mark"));
-        listOfCommands.add(new BotCommand("/key_buttons", "Buttons!"));
         listOfCommands.add(new BotCommand("/put_mark", "Put mark"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
