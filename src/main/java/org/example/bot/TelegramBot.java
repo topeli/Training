@@ -53,6 +53,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/get_coaches", "Show coaches list"));
         listOfCommands.add(new BotCommand("/get_marks", "Show marks list"));
         listOfCommands.add(new BotCommand("/put_mark", "Put mark"));
+        listOfCommands.add(new BotCommand("/get_classes", "Show groups list"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
             log.info("Успешно добавлены команды");
@@ -98,6 +99,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/put_mark":
                     putMark(chatId);
                     break;
+                case "/get_classes":
+                    getGroups(chatId);
+                    break;
                 default:
                     sendMessage(chatId, "То что вы присали не соответствует ни одной команде");
             }
@@ -106,7 +110,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
             Long chatId = update.getCallbackQuery().getMessage().getChatId();
             if (callbackData.startsWith("STUDENT_")) {
-                Long studentId = extractStudentId(callbackData);
+                Long studentId = Long.valueOf(extractCallBackData(callbackData));
 
                 map.putIfAbsent(chatId, studentId);
 
@@ -119,7 +123,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             } else if (callbackData.startsWith("MARK_")) {
                 try {
-                    Integer mark = extractMark(callbackData);
+                    Integer mark = Integer.valueOf(extractCallBackData(callbackData));
                     Long studentId = map.get(chatId);
                     addMark(mark, studentId);
                     String text = "Оценка сохранена";
@@ -128,15 +132,59 @@ public class TelegramBot extends TelegramLongPollingBot {
                     throw new RuntimeException(e);
                 }
             }
+            else if(callbackData.startsWith("GROUP_")) {
+                try {
+                    String group = extractCallBackData(callbackData);
+
+                    //map.putIfAbsent(chatId, studentId);
+
+                    List<Student> students = studentRepository.findByGroup(group);
+                    String text = "Студенты группы " + group +":\n";
+                    for (int i = 0; i<students.size(); i++)
+                    {
+                        text += students.get(i).getName();
+                        text += " ";
+                        text += students.get(i).getSurname()+"\n";
+                    }
+                    executeEditMessageText(text, chatId, messageId);
+
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+    }
+
+    private void getGroups(Long chatId) {
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор группы:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        List<String> groups = studentRepository.findDifferentGroups();
+        for (int i = 0; i < groups.size(); i++) {
+            InlineKeyboardButton group = new InlineKeyboardButton();
+            group.setText(groups.get(i));
+            group.setCallbackData("GROUP_" + groups.get(i));
+            buttonsInLine.add(group);
+        }
+        rowsInLine.add(buttonsInLine);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("ошибка");
         }
     }
 
-    private Integer extractMark(String callbackData) {
-        return Integer.parseInt(callbackData.split("_")[1]);
-    }
-
-    private Long extractStudentId(String callbackData) {
-        return Long.parseLong(callbackData.split("_")[1]);
+    private String extractCallBackData(String callbackData) {
+        return callbackData.split("_")[1];
     }
 
     private void chooseMark(Long chatId) {
@@ -217,7 +265,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void addStudent(Long chatId) {
-        Student student = new Student("Антон", "Кисляков", 21, "10-3");
+        Student student = new Student("Антон", "Кисляков", 21, "1");
         studentController.addStudent(student);
         sendMessage(chatId, "Студент сохранен");
     }
