@@ -7,6 +7,7 @@ import org.example.controllers.StudentController;
 import org.example.models.Coach;
 import org.example.models.Mark;
 import org.example.models.Student;
+import org.example.repositories.GroupRepository;
 import org.example.repositories.StudentRepository;
 import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
-    private final static ConcurrentHashMap<Long, Long> map = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<Long, Long> chosenStudent = new ConcurrentHashMap<>();
+
+    private final static ConcurrentHashMap<Long, String> chosenGroup = new ConcurrentHashMap<>();
+
+    private final static ConcurrentHashMap<Long, Student> userStudent = new ConcurrentHashMap<>();
+
+    private final static ConcurrentHashMap<Long, UserCondition> userCondition = new ConcurrentHashMap<>();
 
     private final TelegramConfig telegramConfig;
     private final StudentController studentController;
@@ -36,14 +43,16 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CoachController coachController;
     private final MarkController markController;
     private final MarkService markService;
+    private final GroupRepository groupRepository;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService, GroupRepository groupRepository) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
         this.studentRepository = studentRepository;
         this.coachController = coachController;
         this.markController = markController;
         this.markService = markService;
+        this.groupRepository = groupRepository;
         log.info("Начинаем добавлять меню");
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "Start work"));
@@ -54,6 +63,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/get_marks", "Show marks list"));
         listOfCommands.add(new BotCommand("/put_mark", "Put mark"));
         listOfCommands.add(new BotCommand("/get_classes", "Show groups list"));
+        listOfCommands.add(new BotCommand("/register", "Register as a student"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
             log.info("Успешно добавлены команды");
@@ -100,19 +110,32 @@ public class TelegramBot extends TelegramLongPollingBot {
                     putMark(chatId);
                     break;
                 case "/get_classes":
-                    getGroups(chatId);
+                    getGroups(chatId, "GROUP_");
+                    break;
+                case "/register":
+                    register(chatId);
                     break;
                 default:
-                    sendMessage(chatId, "То что вы присали не соответствует ни одной команде");
+                    if (userCondition.containsKey(chatId)) {
+                        switch (userCondition.get(chatId)) {
+                            case WAITING_FOR_PASSWORD -> checkPassword(messageText, chatId);
+                            case WAITING_FOR_NAME -> saveName(messageText, chatId);
+                            case WAITING_FOR_SURNAME -> saveSurname(messageText, chatId);
+                            case WAITING_FOR_AGE -> saveAge(messageText, chatId);
+                            default -> sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
+                        }
+                    }
+                   // sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
             }
         } else if (update.hasCallbackQuery()) {
             String callbackData = update.getCallbackQuery().getData();
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
             Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
             if (callbackData.startsWith("STUDENT_")) {
                 Long studentId = Long.valueOf(extractCallBackData(callbackData));
 
-                map.putIfAbsent(chatId, studentId);
+                chosenStudent.putIfAbsent(chatId, studentId);
 
                 Student student = studentRepository.findById(studentId).orElseThrow();
                 String text = "Выбор оценки (" + student.getName() + " " + student.getSurname() + "):";
@@ -121,10 +144,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 chooseMark(chatId);
 
-            } else if (callbackData.startsWith("MARK_")) {
+            }
+            else if (callbackData.startsWith("MARK_")) {
                 try {
                     Integer mark = Integer.valueOf(extractCallBackData(callbackData));
-                    Long studentId = map.get(chatId);
+                    Long studentId = chosenStudent.get(chatId);
                     addMark(mark, studentId);
                     String text = "Оценка сохранена";
                     executeEditMessageText(text, chatId, messageId);
@@ -132,7 +156,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     throw new RuntimeException(e);
                 }
             }
-            else if(callbackData.startsWith("GROUP_")) {
+            else if (callbackData.startsWith("GROUP_")) {
                 try {
                     String group = extractCallBackData(callbackData);
 
@@ -154,11 +178,69 @@ public class TelegramBot extends TelegramLongPollingBot {
                     throw new RuntimeException(e);
                 }
             }
-        }
+            else if (callbackData.startsWith("REGGROUP_")) {
+                String group = extractCallBackData(callbackData);
 
+                chosenGroup.putIfAbsent(chatId, group);
+                userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD);
+
+                String text = "Введите пароль для регистрации в данной группе";
+                executeEditMessageText(text, chatId, messageId);
+            }
+        }
     }
 
-    private void getGroups(Long chatId) {
+    private void register(Long chatId) {
+        getGroups(chatId, "REGGROUP_");
+    }
+
+    private void checkPassword(String messageText, Long chatId) {
+        String group = chosenGroup.get(chatId);
+        String password = groupRepository.findById(group).get().getPassword();
+
+        if (password.equals(messageText)) {
+            userCondition.put(chatId, UserCondition.WAITING_FOR_NAME);
+            sendMessage(chatId, "Введите ваше имя:");
+        } else {
+            sendMessage(chatId, "Пароль неверный!");
+        }
+    }
+
+    private void saveName(String name, Long chatId) {
+        Student student = new Student();
+        student.setName(name);
+        student.setClassGroup(chosenGroup.get(chatId));
+
+        userStudent.putIfAbsent(chatId, student);
+        userCondition.put(chatId, UserCondition.WAITING_FOR_SURNAME);
+
+        sendMessage(chatId, "Введите фамилию:");
+    }
+
+
+    private void saveSurname(String surname, Long chatId) {
+        userStudent.get(chatId).setSurname(surname);
+
+        userCondition.put(chatId, UserCondition.WAITING_FOR_AGE);
+
+        sendMessage(chatId, "Введите возраст:");
+    }
+
+    private void saveAge(String messageText, Long chatId) {
+        try {
+            int age = Integer.parseInt(messageText);
+            userStudent.get(chatId).setAge(age);
+
+            studentRepository.save(userStudent.get(chatId));
+            userCondition.put(chatId, UserCondition.REGISTERED);
+
+            sendMessage(chatId, "Регистрация прошла успешно!");
+        } catch (Exception e) {
+            sendMessage(chatId, "Похоже вы ввели некорректный возраст");
+        }
+    }
+
+    private void getGroups(Long chatId, String callbackData) {
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -170,7 +252,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         for (int i = 0; i < groups.size(); i++) {
             InlineKeyboardButton group = new InlineKeyboardButton();
             group.setText(groups.get(i));
-            group.setCallbackData("GROUP_" + groups.get(i));
+            group.setCallbackData(callbackData + groups.get(i));
             buttonsInLine.add(group);
         }
         rowsInLine.add(buttonsInLine);
