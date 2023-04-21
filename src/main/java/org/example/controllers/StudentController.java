@@ -25,4 +25,8 @@ public class StudentController {
     public List<Student> getAllStudents(){
         return studentService.getAllStudents();
     }
+    @GetMapping("/get/students/group")
+    public List<Student> getStudentsByGroup(String group){
+        return studentService.getStudentsByGroup(group);
+    }
 }

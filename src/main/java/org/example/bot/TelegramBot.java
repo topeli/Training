@@ -56,14 +56,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         log.info("Начинаем добавлять меню");
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "Start work"));
-        listOfCommands.add(new BotCommand("/add_student", "Add student"));
-        listOfCommands.add(new BotCommand("/add_coach", "Add coach"));
         listOfCommands.add(new BotCommand("/get_students", "Show students list"));
         listOfCommands.add(new BotCommand("/get_coaches", "Show coaches list"));
         listOfCommands.add(new BotCommand("/get_marks", "Show marks list"));
         listOfCommands.add(new BotCommand("/put_mark", "Put mark"));
         listOfCommands.add(new BotCommand("/get_classes", "Show groups list"));
-        listOfCommands.add(new BotCommand("/register", "Register as a student"));
+        listOfCommands.add(new BotCommand("/register_as_student", "Register as a student"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
             log.info("Успешно добавлены команды");
@@ -91,12 +89,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/start":
                     startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
                     break;
-                case "/add_student":
-                    addStudent(chatId);
-                    break;
-                case "/add_coach":
-                    addCoach(chatId);
-                    break;
                 case "/get_coaches":
                     getAllCoaches(chatId);
                     break;
@@ -112,20 +104,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/get_classes":
                     getGroups(chatId, "GROUP_");
                     break;
-                case "/register":
+                case "/register_as_student":
                     register(chatId);
                     break;
                 default:
                     if (userCondition.containsKey(chatId)) {
                         switch (userCondition.get(chatId)) {
                             case WAITING_FOR_PASSWORD -> checkPassword(messageText, chatId);
-                            case WAITING_FOR_NAME -> saveName(messageText, chatId);
-                            case WAITING_FOR_SURNAME -> saveSurname(messageText, chatId);
-                            case WAITING_FOR_AGE -> saveAge(messageText, chatId);
                             default -> sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
                         }
                     }
-                   // sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
+                    // sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
             }
         } else if (update.hasCallbackQuery()) {
             String callbackData = update.getCallbackQuery().getData();
@@ -144,8 +133,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 chooseMark(chatId);
 
-            }
-            else if (callbackData.startsWith("MARK_")) {
+            } else if (callbackData.startsWith("MARK_")) {
                 try {
                     Integer mark = Integer.valueOf(extractCallBackData(callbackData));
                     Long studentId = chosenStudent.get(chatId);
@@ -155,37 +143,36 @@ public class TelegramBot extends TelegramLongPollingBot {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }
-            else if (callbackData.startsWith("GROUP_")) {
+            } else if (callbackData.startsWith("GROUP_")) {
                 try {
                     String group = extractCallBackData(callbackData);
 
                     //map.putIfAbsent(chatId, studentId);
 
                     List<Student> students = studentRepository.findByGroup(group);
-                    String text = "Студенты группы " + group +":\n";
-                    for (int i = 0; i<students.size(); i++)
-                    {
+                    String text = "Студенты группы " + group + ":\n";
+                    for (int i = 0; i < students.size(); i++) {
                         text += students.get(i).getName();
                         text += " ";
-                        text += students.get(i).getSurname()+"\n";
+                        text += students.get(i).getSurname() + "\n";
                     }
                     executeEditMessageText(text, chatId, messageId);
 
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }
-            else if (callbackData.startsWith("REGGROUP_")) {
+            } else if (callbackData.startsWith("REGGROUP_")) {
                 String group = extractCallBackData(callbackData);
 
-                chosenGroup.putIfAbsent(chatId, group);
+                getStudentsInGroup(chatId, group);
+            } else if (callbackData.startsWith("STUDENTGROUP_")) {
+                String studentId = extractCallBackData(callbackData);
+                Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
+
+                userStudent.putIfAbsent(chatId, student);
                 userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD);
 
-                String text = "Введите пароль для регистрации в данной группе";
-                executeEditMessageText(text, chatId, messageId);
+                sendMessage(chatId, "Введите пароль:");
             }
         }
     }
@@ -194,49 +181,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         getGroups(chatId, "REGGROUP_");
     }
 
-    private void checkPassword(String messageText, Long chatId) {
-        String group = chosenGroup.get(chatId);
-        String password = groupRepository.findById(group).get().getPassword();
+    private void checkPassword(String password, Long chatId) {
+        Student student = userStudent.get(chatId);
 
-        if (password.equals(messageText)) {
-            userCondition.put(chatId, UserCondition.WAITING_FOR_NAME);
-            sendMessage(chatId, "Введите ваше имя:");
-        } else {
-            sendMessage(chatId, "Пароль неверный!");
-        }
-    }
-
-    private void saveName(String name, Long chatId) {
-        Student student = new Student();
-        student.setName(name);
-        student.setClassGroup(chosenGroup.get(chatId));
-
-        userStudent.putIfAbsent(chatId, student);
-        userCondition.put(chatId, UserCondition.WAITING_FOR_SURNAME);
-
-        sendMessage(chatId, "Введите фамилию:");
-    }
-
-
-    private void saveSurname(String surname, Long chatId) {
-        userStudent.get(chatId).setSurname(surname);
-
-        userCondition.put(chatId, UserCondition.WAITING_FOR_AGE);
-
-        sendMessage(chatId, "Введите возраст:");
-    }
-
-    private void saveAge(String messageText, Long chatId) {
-        try {
-            int age = Integer.parseInt(messageText);
-            userStudent.get(chatId).setAge(age);
-
-            studentRepository.save(userStudent.get(chatId));
+        if (password.equals(student.getPassword())) {
+            sendMessage(chatId, "Пароль верный!");
             userCondition.put(chatId, UserCondition.REGISTERED);
-
-            sendMessage(chatId, "Регистрация прошла успешно!");
-        } catch (Exception e) {
-            sendMessage(chatId, "Похоже вы ввели некорректный возраст");
+            student.setChatId(chatId);
+            studentRepository.save(student);
+            sendMessage(chatId, "Регистрация успешно завершена!");
+            displayStudentMenu(chatId);
+        } else {
+            sendMessage(chatId, "Пароль неверный! Попробуйте снова..");
         }
     }
 
@@ -267,6 +223,59 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private String extractCallBackData(String callbackData) {
         return callbackData.split("_")[1];
+    }
+
+    private void displayStudentMenu(Long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Главное меню");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton schedule = new InlineKeyboardButton();
+        schedule.setText("Мое расписание");
+        schedule.setCallbackData("SCHEDULE_" + chatId);
+        rows.add(List.of(schedule));
+
+        InlineKeyboardButton marks = new InlineKeyboardButton();
+        marks.setText("Мои оценки");
+        marks.setCallbackData("MYMARKS_" + chatId);
+
+        rows.add(List.of(marks));
+
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе меню студента:" + e.getMessage());
+        }
+    }
+
+    private void getStudentsInGroup(Long chatId, String group) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выберите свой профиль:");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<Student> students = studentController.getStudentsByGroup(group);
+        for (int i = 0; i < students.size(); i++) {
+            InlineKeyboardButton student = new InlineKeyboardButton();
+            student.setText(students.get(i).getName() + " " + students.get(i).getSurname());
+            student.setCallbackData("STUDENTGROUP_" + students.get(i).getId());
+            rows.add(List.of(student));
+        }
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе списка студентов:" + e.getMessage());
+        }
     }
 
     private void chooseMark(Long chatId) {
@@ -361,11 +370,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, text);
     }
 
-    private void addCoach(Long chatId) {
-        Coach coach = new Coach("Антон", "Кисляков", 21L, 2L);
-        coachController.addCoach(coach);
-        sendMessage(chatId, "Тренер сохранен");
-    }
 
     private void getAllCoaches(Long chatId) {
         List<Coach> coaches = coachController.getAllCoaches();
