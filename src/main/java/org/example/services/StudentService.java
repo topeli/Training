@@ -21,4 +21,8 @@ public class StudentService {
     public List<Student> getAllStudents(){
         return studentRepository.findAll();
     }
+
+    public List<Student> getStudentsByGroup(String group) {
+        return studentRepository.findByGroup(group);
+    }
 }
