@@ -185,7 +185,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 sendMessage(chatId, "Введите пароль:");
             }
-            else if (callbackData.startsWith("REGCOACH")) {
+            else if (callbackData.startsWith("REGCOACH_")) {
                 String coachId = extractCallBackData(callbackData);
                 Coach coach = coachRepository.findById(Long.valueOf(coachId)).orElseThrow();
 
@@ -198,7 +198,30 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
     private void registerCoach(Long chatId) {
-        extractCallBackData("REGCOACH");
+        getCoach(chatId, "REGCOACH_");
+    }
+    private void getCoach(Long chatId, String callbackData) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выберите свой профиль:");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<Coach> coaches = coachController.getAllCoaches();
+        for (int i = 0; i < coaches.size(); i++) {
+            InlineKeyboardButton coach = new InlineKeyboardButton();
+            coach.setText(coaches.get(i).getName() + " " + coaches.get(i).getSurname());
+            coach.setCallbackData(callbackData + coaches.get(i).getId());
+            rows.add(List.of(coach));
+        }
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе списка тренеров:" + e.getMessage());
+        }
     }
     private void checkPasswordCoach(String password, Long chatId) {
         Coach coach = userCoach.get(chatId);
