@@ -42,7 +42,7 @@ public class MarkService {
         markRepository.save(mark1);
     }
 
-    public List<Mark> getAllMarks() {
-        return markRepository.findAll();
+    public List<Mark> getStudentMarks(String name) {
+        return markRepository.getStudentMarksByName(name);
     }
 }
