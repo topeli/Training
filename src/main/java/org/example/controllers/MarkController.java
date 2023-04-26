@@ -19,9 +19,9 @@ public class MarkController {
         this.markService = markService;
     }
 
-    @GetMapping("/get/mark")
-    public List<Mark> getAllMarks(){
-        return markService.getAllMarks();
+    @GetMapping("/get/mark/{name}")
+    public List<Mark> getStudentMarks(@PathVariable String name){
+        return markService.getStudentMarks(name);
     }
 
 }

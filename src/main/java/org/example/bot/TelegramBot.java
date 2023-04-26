@@ -9,6 +9,7 @@ import org.example.models.Mark;
 import org.example.models.Student;
 import org.example.repositories.CoachRepository;
 import org.example.repositories.GroupRepository;
+import org.example.repositories.MarkRepository;
 import org.example.repositories.StudentRepository;
 import org.example.services.MarkService;
 import org.springframework.stereotype.Component;
@@ -48,8 +49,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final MarkService markService;
     private final GroupRepository groupRepository;
     private final CoachRepository coachRepository;
+    private final MarkRepository markRepository;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService, GroupRepository groupRepository, CoachRepository coachRepository) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService, GroupRepository groupRepository, CoachRepository coachRepository, MarkRepository markRepository) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
         this.studentRepository = studentRepository;
@@ -58,6 +60,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.markService = markService;
         this.groupRepository = groupRepository;
         this.coachRepository = coachRepository;
+        this.markRepository = markRepository;
         log.info("Начинаем добавлять меню");
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "Start work"));
@@ -101,9 +104,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/get_students":
                     getAllStudents(chatId);
                     break;
-                case "/get_marks":
+                /*case "/get_marks":
                     getAllMarks(chatId);
-                    break;
+                    break;*/
                 case "/put_mark":
                     putMark(chatId);
                     break;
@@ -193,6 +196,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                 userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD_COACH);
 
                 sendMessage(chatId, "Введите пароль:");
+            }
+            else if(callbackData.startsWith("MYMARKS_")){
+                Long studentId = Long.valueOf(extractCallBackData(callbackData));
+                List<Mark> marks = markRepository.getMarksByStudentId(studentId);
+
+                for (Mark mark : marks) {
+                    sendMessage(chatId, String.valueOf(mark.getMark()));
+
+                }
+
+
             }
             }
         }
@@ -287,6 +301,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void displayStudentMenu(Long chatId) {
+        Student student = userStudent.get(chatId);
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText("Главное меню");
@@ -296,12 +311,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         InlineKeyboardButton schedule = new InlineKeyboardButton();
         schedule.setText("Мое расписание");
-        schedule.setCallbackData("SCHEDULE_" + chatId);
+        schedule.setCallbackData("SCHEDULE_" + student.getId());
         rows.add(List.of(schedule));
 
         InlineKeyboardButton marks = new InlineKeyboardButton();
         marks.setText("Мои оценки");
-        marks.setCallbackData("MYMARKS_" + chatId);
+        marks.setCallbackData("MYMARKS_" + student.getId());
 
         rows.add(List.of(marks));
 
@@ -441,15 +456,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void addMark(int mark, Long studentId) throws Exception {
-        markService.addMark(mark, "Антон", studentId);
+        markService.addMark(mark, "Александр", studentId);
     }
 
-    private void getAllMarks(Long chatId) {
+    /*private void getAllMarks(Long chatId) {
         List<Mark> marks = markController.getAllMarks();
         String text = "";
         for (int i = 0; i < marks.size(); i++) {
             text += marks.get(i).getMark() + " " + marks.get(i).getStudent() + " " + marks.get(i).getCoach() + '\n';
         }
         sendMessage(chatId, text);
-    }
+    }*/
 }
