@@ -159,6 +159,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             } else if (callbackData.startsWith("GROUP_")) {
                 try {
+
                     String group = extractCallBackData(callbackData);
 
                     //map.putIfAbsent(chatId, studentId);
@@ -177,16 +178,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             } else if (callbackData.startsWith("REGGROUP_")) {
                 String group = extractCallBackData(callbackData);
-
+                String text = "Группа выбрана";
                 getStudentsInGroup(chatId, group);
+                executeEditMessageText(text, chatId, messageId);
+
             } else if (callbackData.startsWith("STUDENTGROUP_")) {
                 String studentId = extractCallBackData(callbackData);
                 Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
-
+                String text = "Введите пароль:";
                 userStudent.putIfAbsent(chatId, student);
                 userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD);
-
-                sendMessage(chatId, "Введите пароль:");
+                executeEditMessageText(text, chatId, messageId);
+                //sendMessage(chatId, "Введите пароль:");
             }
             else if (callbackData.startsWith("REGCOACH_")) {
                 String coachId = extractCallBackData(callbackData);
