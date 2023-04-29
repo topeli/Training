@@ -14,6 +14,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findByGroup(String classGroup);
     @Query(value = "select distinct class_group from students1533",nativeQuery = true)
     List<String> findDifferentGroups();
-
+    @Query(value = "select isregistered from students1533 where id=:id", nativeQuery = true)
+    boolean isReg(Long id);
 }
 

@@ -25,6 +25,8 @@ public class Student {
 
     private Long chatId;
 
+    private boolean isRegistered;
+
     public Student(String name, String surname, int age, String classGroup) {
         this.name = name;
         this.surname = surname;

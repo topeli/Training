@@ -17,4 +17,6 @@ public interface MarkRepository extends JpaRepository<Mark, Long>{
     List<Mark> getMarksByStudentId(Long id);
 
 
+
+
 }
