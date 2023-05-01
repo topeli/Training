@@ -8,7 +8,6 @@ import org.example.models.Coach;
 import org.example.models.Mark;
 import org.example.models.Student;
 import org.example.repositories.CoachRepository;
-import org.example.repositories.GroupRepository;
 import org.example.repositories.MarkRepository;
 import org.example.repositories.StudentRepository;
 import org.example.services.MarkService;
@@ -47,18 +46,16 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CoachController coachController;
     private final MarkController markController;
     private final MarkService markService;
-    private final GroupRepository groupRepository;
     private final CoachRepository coachRepository;
     private final MarkRepository markRepository;
 
-    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService, GroupRepository groupRepository, CoachRepository coachRepository, MarkRepository markRepository) {
+    public TelegramBot(TelegramConfig telegramConfig, StudentController studentController, StudentRepository studentRepository, CoachController coachController, MarkController markController, MarkService markService, CoachRepository coachRepository, MarkRepository markRepository) {
         this.telegramConfig = telegramConfig;
         this.studentController = studentController;
         this.studentRepository = studentRepository;
         this.coachController = coachController;
         this.markController = markController;
         this.markService = markService;
-        this.groupRepository = groupRepository;
         this.coachRepository = coachRepository;
         this.markRepository = markRepository;
         log.info("Начинаем добавлять меню");
@@ -97,12 +94,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             switch (messageText) {
                 case "/start":
                     startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
-                    if (studentRepository.isReg(chatId).isEmpty())//а как а никак (надо проверить поле isRegistered true оно или нет через базу)
-                    {
+                    if (studentRepository.studentByChatId(chatId).isEmpty() && coachRepository.coachByChatId(chatId).isEmpty()) {
                         displayMainMenu(chatId);
                     } else {
                         sendMessage(chatId, "Вы уже зарегистрированы");
-                        displayStudentMenu(chatId);
+                        log.info("Хотим отобразить главное меню...");
+                        studentOrCoachMenu(chatId);
+
                     }
 
                     break;
@@ -120,9 +118,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 case "/get_classes":
                     getGroups(chatId, "GROUP_");
-                    break;
-                case "/register_as_coach":
-                    registerCoach(chatId);
                     break;
 
                 default:
@@ -191,13 +186,17 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 sendMessage(chatId, "Введите пароль:");
             } else if (callbackData.startsWith("REGCOACH_")) {
+                getCoaches(chatId, "COACH_");
+
+            } else if (callbackData.startsWith("COACH_")) {
                 String coachId = extractCallBackData(callbackData);
                 Coach coach = coachRepository.findById(Long.valueOf(coachId)).orElseThrow();
-                String text = "Введите пароль: ";
+                sendMessage(chatId, "Выбран тренер: " + coach.getName() + " " + coach.getSurname());
+
                 userCoach.putIfAbsent(chatId, coach);
                 userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD_COACH);
-                executeEditMessageText(text, chatId, messageId);
-                //sendMessage(chatId, "Введите пароль:");
+
+                sendMessage(chatId, "Введите пароль:");
             } else if (callbackData.startsWith("MYMARKS_")) {
                 Long studentId = Long.valueOf(extractCallBackData(callbackData));
                 List<Mark> marks = markRepository.getMarksByStudentId(studentId);
@@ -208,25 +207,39 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             } else if (callbackData.startsWith("REGSTUDENT_")) {
                 getGroups(chatId, "REGGROUP_");
-
-
             } else if (callbackData.startsWith("REGGROUP_")) {
-                log.info(callbackData);
                 String group = extractCallBackData(callbackData);
                 String text = "Выбрана группа: " + group;
 
                 executeEditMessageText(text, chatId, messageId);
                 getStudentsInGroup(chatId, group);
 
+            } else if (callbackData.startsWith("COACHGROUPS_")) {
+                Long coachId = Long.valueOf(extractCallBackData(callbackData));
+                Coach coach = coachRepository.findById(coachId).orElseThrow();
+
+                displayCoachGroups(chatId, coach);
             }
         }
     }
 
-    private void registerCoach(Long chatId) {
-        getCoach(chatId, "REGCOACH_");
+    private void displayCoachGroups(Long chatId, Coach coach) {
+        // метод должен отображать группы тренера в виде кнопок
+        // при нажатии на кнопку должен отображаться список студентов в виде кнопок выбранной группы на кнопке
+        String[] groups = coach.getClassGroups().split(" ");
+
+
     }
 
-    private void getCoach(Long chatId, String callbackData) {
+    private void studentOrCoachMenu(Long chatId) {
+        if (studentRepository.studentByChatId(chatId).isEmpty()) {
+            displayCoachMenu(chatId);
+        } else {
+            displayStudentMenu(chatId);
+        }
+    }
+
+    private void getCoaches(Long chatId, String callbackData) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText("Выберите свой профиль:");
@@ -343,9 +356,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void displayStudentMenu(Long chatId) {
-        Student student = userStudent.get(chatId);
+        Student student = studentRepository.studentByChatId(chatId).get(0);
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
+        log.info("Отображаем главное меню студента...");
         message.setText("Главное меню");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
@@ -373,7 +387,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void displayCoachMenu(Long chatId) {
-        Coach coach = userCoach.get(chatId);
+        Coach coach = coachRepository.coachByChatId(chatId).get(0);
+        log.info("Отображаем главное меню тренера...");
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText("Главное меню");
@@ -501,12 +516,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             execute(sendMessage);
         } catch (TelegramApiException e) {
         }
-    }
-
-    private void addStudent(Long chatId) {
-        Student student = new Student("Антон", "Кисляков", 21, "1");
-        studentController.addStudent(student);
-        sendMessage(chatId, "Студент сохранен");
     }
 
     private void getAllStudents(Long chatId) {

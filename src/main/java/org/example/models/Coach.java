@@ -21,9 +21,9 @@ public class Coach {
     private String surname;
     private Long age;
     private Long experience;
-    //private String passwordC;
     private String passwordCoach;
     private Long chatId;
+    private String classGroups; // например "10.3 10.4"
 
     public Coach(String name, String surname, Long age, Long e) {
         this.name = name;

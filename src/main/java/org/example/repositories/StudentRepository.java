@@ -1,6 +1,5 @@
 package org.example.repositories;
 
-import org.example.models.Coach;
 import org.example.models.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +14,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     @Query(value = "select distinct class_group from students1533",nativeQuery = true)
     List<String> findDifferentGroups();
     @Query(value = "select * from students1533 where chat_id=:chatId", nativeQuery = true)
-    List<Student> isReg(Long chatId);
+    List<Student> studentByChatId(Long chatId);
 }
 

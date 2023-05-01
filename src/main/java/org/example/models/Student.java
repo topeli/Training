@@ -3,7 +3,6 @@ package org.example.models;
 import lombok.*;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "students1533")
@@ -22,7 +21,6 @@ public class Student {
     private String classGroup;
 
     private String password;
-
     private Long chatId;
 
 
@@ -33,5 +31,4 @@ public class Student {
         this.age = age;
         this.classGroup = classGroup;
     }
-    //private LocalDateTime created;
 }
