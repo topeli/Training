@@ -157,29 +157,31 @@ public class TelegramBot extends TelegramLongPollingBot {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            } else if (callbackData.startsWith("GROUP_")) {
-                try {
+            } //else if (callbackData.startsWith("GROUP_")) {
+                //try {
 
-                    String group = extractCallBackData(callbackData);
+                    //String group = extractCallBackData(callbackData);
 
-                    //map.putIfAbsent(chatId, studentId);
 
-                    List<Student> students = studentRepository.findByGroup(group);
-                    String text = "Студенты группы " + group + ":\n";
-                    for (int i = 0; i < students.size(); i++) {
-                        text += students.get(i).getName();
-                        text += " ";
-                        text += students.get(i).getSurname() + "\n";
-                    }
-                    executeEditMessageText(text, chatId, messageId);
 
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            } else if (callbackData.startsWith("STUDENTGROUP_")) {
+                    //List<Student> students = studentRepository.findByGroup(group);
+                    //String text = "Студенты группы " + group + ":\n";
+                    //for (int i = 0; i < students.size(); i++) {
+                        //text += students.get(i).getName();
+                        //text += " ";
+                        //text += students.get(i).getSurname() + "\n";
+                    //}
+                    //executeEditMessageText(text, chatId, messageId);
+
+                //} catch (Exception e) {
+                    //throw new RuntimeException(e);
+                //}
+            //}
+        else if (callbackData.startsWith("STUDENTGROUP_")) {
                 String studentId = extractCallBackData(callbackData);
                 Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
-                sendMessage(chatId, "Выбран студент: " + student.getName() + " " + student.getSurname());
+                String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
+                executeEditMessageText(text, chatId, messageId);
 
                 userStudent.putIfAbsent(chatId, student);
                 userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD);
@@ -191,7 +193,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else if (callbackData.startsWith("COACH_")) {
                 String coachId = extractCallBackData(callbackData);
                 Coach coach = coachRepository.findById(Long.valueOf(coachId)).orElseThrow();
-                sendMessage(chatId, "Выбран тренер: " + coach.getName() + " " + coach.getSurname());
+                String text = "Выбран тренер: " + coach.getName() + " " + coach.getSurname();
+                executeEditMessageText(text, chatId, messageId);
 
                 userCoach.putIfAbsent(chatId, coach);
                 userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD_COACH);
@@ -205,6 +208,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, String.valueOf(mark.getMark()));
 
                 }
+
             } else if (callbackData.startsWith("REGSTUDENT_")) {
                 getGroups(chatId, "REGGROUP_");
             } else if (callbackData.startsWith("REGGROUP_")) {
@@ -217,18 +221,65 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else if (callbackData.startsWith("COACHGROUPS_")) {
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
+                displayCoachGroups(chatId, coach, "GROUP_");
 
-                displayCoachGroups(chatId, coach);
+            }
+            else if (callbackData.startsWith("GROUP_")) {//не работает а почему
+                String group = extractCallBackData(callbackData);
+                getStudentsInGroupCoach(chatId, group);
+            }
+            else if(callbackData.startsWith("STUDENTGROUPCOACH_")) {
+
             }
         }
     }
 
-    private void displayCoachGroups(Long chatId, Coach coach) {
-        // метод должен отображать группы тренера в виде кнопок
-        // при нажатии на кнопку должен отображаться список студентов в виде кнопок выбранной группы на кнопке
+    private void displayCoachGroups(Long chatId, Coach coach, String callbackData) {
         String[] groups = coach.getClassGroups().split(" ");
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор группы:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        for (int i = 0; i < groups.length; i++) {
+            InlineKeyboardButton group = new InlineKeyboardButton();
+            group.setText(groups[i]);
+            group.setCallbackData(callbackData + groups[i]);
+            buttonsInLine.add(group);
+        }
+        rowsInLine.add(buttonsInLine);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("ошибка");
+        }
 
 
+    }
+    private void getStudentsInGroupCoach(Long chatId, String group) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<Student> students = studentController.getStudentsByGroup(group);
+        for (int i = 0; i < students.size(); i++) {
+            InlineKeyboardButton student = new InlineKeyboardButton();
+            student.setText(students.get(i).getName() + " " + students.get(i).getSurname());
+            student.setCallbackData("STUDENTGROUPCOACH_" + students.get(i).getId());
+            rows.add(List.of(student));
+        }
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе списка студентов:" + e.getMessage());
+        }
     }
 
     private void studentOrCoachMenu(Long chatId) {
@@ -274,7 +325,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Регистрация успешно завершена!");
             displayCoachMenu(chatId);
         } else {
-            sendMessage(chatId, "Пароль неверный! Попробуйте снова..");
+            sendMessage(chatId, "Пароль неверный! Попробуйте снова...");
         }
     }
 
@@ -290,7 +341,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Регистрация успешно завершена!");
             displayStudentMenu(chatId);
         } else {
-            sendMessage(chatId, "Пароль неверный! Попробуйте снова..");
+            sendMessage(chatId, "Пароль неверный! Попробуйте снова...");
         }
     }
 
@@ -404,7 +455,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         InlineKeyboardButton groups = new InlineKeyboardButton();
         groups.setText("Мои группы");
         groups.setCallbackData("COACHGROUPS_" + coach.getId());
-
         rows.add(List.of(groups));
 
         markup.setKeyboard(rows);
