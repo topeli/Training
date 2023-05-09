@@ -110,12 +110,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/get_students":
                     getAllStudents(chatId);
                     break;
-                /*case "/get_marks":
-                    getAllMarks(chatId);
-                    break;*/
-                case "/put_mark":
-                    putMark(chatId);
-                    break;
                 case "/get_classes":
                     getGroups(chatId, "GROUP_");
                     break;
@@ -151,33 +145,16 @@ public class TelegramBot extends TelegramLongPollingBot {
                 try {
                     Integer mark = Integer.valueOf(extractCallBackData(callbackData));
                     Long studentId = chosenStudent.get(chatId);
-                    addMark(mark, studentId);
+
+                    Coach coach = coachRepository.coachByChatId(chatId).get(0);
+
+                    addMark(mark, studentId, coach);
                     String text = "Оценка сохранена";
                     executeEditMessageText(text, chatId, messageId);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            } /*else if (callbackData.startsWith("GROUP_")) {
-                try {
-
-                    String group = extractCallBackData(callbackData);
-
-
-
-                    List<Student> students = studentRepository.findByGroup(group);
-                    String text = "Студенты группы " + group + ":\n";
-                    for (int i = 0; i < students.size(); i++) {
-                        text += students.get(i).getName();
-                        text += " ";
-                        text += students.get(i).getSurname() + "\n";
-                    }
-                    executeEditMessageText(text, chatId, messageId);
-
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }*/
-        else if (callbackData.startsWith("STUDENTGROUP_")) {
+            } else if (callbackData.startsWith("STUDENTGROUP_")) {
                 String studentId = extractCallBackData(callbackData);
                 Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
                 String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
@@ -223,39 +200,35 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
                 displayCoachGroups(chatId, coach, "GROUP_");
 
-            }
-            else if (callbackData.startsWith("GROUP_")) {//не работает а почему
+            } else if (callbackData.startsWith("GROUP_")) {//не работает а почему
                 String group = extractCallBackData(callbackData);
                 getStudentsInGroupCoach(chatId, group);
-            }
-            else if(callbackData.startsWith("STUDENTGROUPCOACH_")) {
-                displayCommandsForCoach(chatId);
+            } else if (callbackData.startsWith("STUDENTGROUPCOACH_")) {
+                String studentId = extractCallBackData(callbackData);
+                displayCommandsForCoach(chatId, studentId);
             }
         }
     }
 
-    private void displayCommandsForCoach(Long chatId) {
+    private void displayCommandsForCoach(Long chatId, String studentId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
+        message.setText("Выберите действие:");
+
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         InlineKeyboardButton putMark = new InlineKeyboardButton();
         putMark.setText("Поставить оценку");
-        putMark.setCallbackData("MARK_");
+        putMark.setCallbackData("STUDENT_" + studentId);
         rows.add(List.of(putMark));
 
         InlineKeyboardButton putAbsence = new InlineKeyboardButton();
-        putAbsence.setText("Н");
-        putAbsence.setCallbackData("PUTABSENCE_");
+        putAbsence.setText("Отметить присутсвие/отсутствие на тренировке");
+        putAbsence.setCallbackData("PUTABSENCE_" + studentId);
         rows.add(List.of(putAbsence));
-        markup.setKeyboard(rows);
-        InlineKeyboardButton putPresence = new InlineKeyboardButton();
-        putPresence.setText("Не Н");
-        putAbsence.setCallbackData("PUTPRESENCE_");
-        rows.add(List.of(putPresence));
-        markup.setKeyboard(rows);
 
+        markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
 
         try {
@@ -290,9 +263,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     }
+
     private void getStudentsInGroupCoach(Long chatId, String group) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
+        message.setText("Список студентов в группе " + group);
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -613,8 +588,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, text);
     }
 
-    private void addMark(int mark, Long studentId) throws Exception {
-        markService.addMark(mark, "Александр", studentId);
+    private void addMark(int mark, Long studentId, Coach coach) throws Exception {
+        markService.addMark(mark, coach, studentId);
     }
 
     /*private void getAllMarks(Long chatId) {

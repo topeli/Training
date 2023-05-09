@@ -1,4 +1,7 @@
 package org.example.services;
+
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.example.models.Coach;
 import org.example.models.Mark;
 import org.example.models.Student;
@@ -13,6 +16,7 @@ import java.util.Optional;
 
 @ComponentScan("org.example.services")
 @Service
+@Slf4j
 public class MarkService {
     private final MarkRepository markRepository;
     private final StudentRepository studentRepository;
@@ -25,20 +29,16 @@ public class MarkService {
         this.coachRepository = coachRepository;
     }
 
-    public void addMark(int mark, String coachName, Long studentId) throws Exception {
+    public void addMark(int mark, Coach coach, Long studentId) throws Exception {
         Mark mark1 = new Mark(mark);
-        try
-        {
+        try {
             Student student = studentRepository.findById(studentId).orElseThrow();
             mark1.setStudent(student);
+        } catch (Exception e) {
         }
-        catch (Exception e){}
-        try
-        {
-            Coach coach = coachRepository.findByName(coachName).get(0);
-            mark1.setCoach(coach);
-        }
-        catch (Exception e){}
+
+        mark1.setCoach(coach);
+
         markRepository.save(mark1);
     }
 
