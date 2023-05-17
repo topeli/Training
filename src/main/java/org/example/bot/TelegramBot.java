@@ -23,6 +23,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -200,7 +201,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
                 displayCoachGroups(chatId, coach, "GROUP_");
 
-            } else if (callbackData.startsWith("GROUP_")) {//не работает а почему
+            } else if (callbackData.startsWith("ADDTRAINING_")) {
+                Long coachId = Long.valueOf(extractCallBackData(callbackData));
+                Coach coach = coachRepository.findById(coachId).orElseThrow();
+                displayCoachGroups(chatId, coach, "TRAININGGROUP_");
+            } else if (callbackData.startsWith("TRAININGGROUP_")) {
+                String group = extractCallBackData(callbackData);
+                displayDates(chatId, group, "TRAININGDATE_");
+            } else if (callbackData.startsWith("GROUP_")) {
                 String group = extractCallBackData(callbackData);
                 getStudentsInGroupCoach(chatId, group);
             } else if (callbackData.startsWith("STUDENTGROUPCOACH_")) {
@@ -238,6 +246,33 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void displayDates(Long chatId, String group, String callbackData) {
+        LocalDateTime currentDate = LocalDateTime.now();
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор даты:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            InlineKeyboardButton date = new InlineKeyboardButton();
+            date.setText(currentDate.getDayOfMonth() + "." + String.valueOf(currentDate.getMonth().ordinal() + 1));
+            date.setCallbackData(callbackData + currentDate.getDayOfMonth() + "." + String.valueOf(currentDate.getMonth().ordinal() + 1));
+            buttonsInLine.add(date);
+
+            currentDate = currentDate.plusDays(1L);
+        }
+        rowsInLine.add(buttonsInLine);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе возможных дат тренировки");
+        }
+    }
+
     private void displayCoachGroups(Long chatId, Coach coach, String callbackData) {
         String[] groups = coach.getClassGroups().split(" ");
         SendMessage message = new SendMessage();
@@ -260,8 +295,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("ошибка");
         }
-
-
     }
 
     private void getStudentsInGroupCoach(Long chatId, String group) {
@@ -457,6 +490,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         groups.setText("Мои группы \uD83D\uDC65\n");
         groups.setCallbackData("COACHGROUPS_" + coach.getId());
         rows.add(List.of(groups));
+
+        InlineKeyboardButton addTraining = new InlineKeyboardButton();
+        addTraining.setText("Добавить тренировку");
+        addTraining.setCallbackData("ADDTRAINING_" + coach.getId());
+        rows.add(List.of(addTraining));
 
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
