@@ -24,6 +24,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -215,9 +216,75 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String studentId = extractCallBackData(callbackData);
                 displayCommandsForCoach(chatId, studentId);
             }
+            else if (callbackData.startsWith("TRAININGDATE_")) {
+                displayTime(chatId, "ENDTIME_");
+                // 1-ый способ
+                if(callbackData.startsWith("ENDTIME_"))
+                {
+                    String timeOfTraining = extractCallBackData("TRAININGDATE_");
+                    log.info("зашел еее");
+                    displayTimeEnd(chatId, timeOfTraining, "ENDTIME_");
+                }
+                // конец 1-ого способа
+            }
+            // 2-ой способ
+            /*else if (callbackData.startsWith("ENDTIME_")) {
+                String timeOfTraining = extractCallBackData("TRAININGDATE_");
+                displayTimeEnd(chatId, timeOfTraining, "ENDTIME_");
+            }*/
+            // конец 2-ого способа
         }
     }
 
+    private void displayTimeEnd(Long chatId, String timeOfEnd, String callbackData) {
+        LocalTime timeOfTraining = LocalTime.parse(timeOfEnd);
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор конца тренировки:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            InlineKeyboardButton time = new InlineKeyboardButton();
+            time.setText(timeOfTraining.toString());
+            time.setCallbackData(callbackData + timeOfTraining);
+            timeOfTraining = timeOfTraining.plusHours(1L);
+            buttonsInLine.add(time);
+        }
+        rowsInLine.add(buttonsInLine);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе возможных дат тренировки");
+        }
+    }
+
+    private void displayTime(Long chatId, String callbackData) {
+        LocalTime timeOfTraining = LocalTime.parse("10:00");
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор начала тренировки:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            InlineKeyboardButton time = new InlineKeyboardButton();
+            time.setText(timeOfTraining.toString());
+            time.setCallbackData(callbackData + timeOfTraining);
+            timeOfTraining = timeOfTraining.plusHours(2L);
+            buttonsInLine.add(time);
+        }
+        rowsInLine.add(buttonsInLine);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе возможных дат тренировки");
+        }
+    }
     private void displayCommandsForCoach(Long chatId, String studentId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
