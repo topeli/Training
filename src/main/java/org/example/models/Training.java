@@ -8,7 +8,9 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 
 @Entity
@@ -29,7 +31,15 @@ public class Training {
     private Coach coach;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm", timezone = "Europe/Moscow")
-    private Date startTime;
+    private LocalTime startTime;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm", timezone = "Europe/Moscow")
-    private Date endTime;
+    private LocalTime endTime;
+    private LocalDate date;
+    public Training(String group, Coach coach, LocalTime startTime, LocalTime endTime, LocalDate date) {
+        this.coach = coach;
+        this.endTime = endTime;
+        this.startTime = startTime;
+        this.classGroup = group;
+        this.date = date;
+    }
 }
