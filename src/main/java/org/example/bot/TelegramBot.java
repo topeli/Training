@@ -13,6 +13,8 @@ import org.example.repositories.MarkRepository;
 import org.example.repositories.StudentRepository;
 import org.example.services.MarkService;
 import org.example.services.TrainingService;
+import org.springframework.data.util.Pair;
+import org.springframework.format.datetime.DateFormatter;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -25,22 +27,23 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
     private final static ConcurrentHashMap<Long, Long> chosenStudent = new ConcurrentHashMap<>();
-
-    private final static ConcurrentHashMap<Long, String> chosenGroup = new ConcurrentHashMap<>();
-
     private final static ConcurrentHashMap<Long, Student> userStudent = new ConcurrentHashMap<>();
     private final static ConcurrentHashMap<Long, Coach> userCoach = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<Long, Training> coachTraining = new ConcurrentHashMap<>();
 
 
     private final static ConcurrentHashMap<Long, UserCondition> userCondition = new ConcurrentHashMap<>();
@@ -158,6 +161,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     addMark(mark, studentId, coach);
                     String text = "Оценка сохранена";
                     executeEditMessageText(text, chatId, messageId);
+                    displayCoachMenu(chatId);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -191,8 +195,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Mark> marks = markRepository.getMarksByStudentId(studentId);
                 String message = "Мои оценки: ";
                 for (Mark mark : marks) {
-                        message += String.valueOf(mark.getMark());
-                        message += " ";
+                    message += String.valueOf(mark.getMark());
+                    message += " ";
                 }
                 sendMessage(chatId, message);
 
@@ -215,10 +219,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             } else if (callbackData.startsWith("ADDTRAINING_")) {
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
+
+                coachTraining.putIfAbsent(chatId, new Training());
+
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
                 displayCoachGroups(chatId, coach, "TRAININGGROUP_");
             } else if (callbackData.startsWith("TRAININGGROUP_")) {
                 String group = extractCallBackData(callbackData);
+                coachTraining.get(chatId).setClassGroup(group);
+
                 displayDates(chatId, group, "TRAININGDATE_");
 
                 String text = "Выбрана группа: " + group;
@@ -234,31 +243,53 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
                 String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
                 executeEditMessageText(text, chatId, messageId);
-            }
-            else if (callbackData.startsWith("TRAININGDATE_")) {
-                displayTime(chatId, "ENDTIME_");
+            } else if (callbackData.startsWith("TRAININGDATE_")) {
+                displayTime(chatId, "STARTTIME_");
                 String date = extractCallBackData(callbackData);
+
+                LocalDate trainingDate = parseDate(date);
+                coachTraining.get(chatId).setDate(trainingDate);
+
                 String text = "Выбрана дата: " + date;
                 executeEditMessageText(text, chatId, messageId);
-            }
-            else if(callbackData.startsWith("ENDTIME_")) {
+            } else if (callbackData.startsWith("STARTTIME_")) {
                 String timeOfTraining = extractCallBackData(callbackData);
-                log.info("зашел еее");
-                displayTimeEnd(chatId, timeOfTraining, "TIMECHOSEN_");
-                String text = "Время выбрано";
+
+                LocalTime startTime = parseTime(timeOfTraining);
+                coachTraining.get(chatId).setStartTime(startTime);
+
+                displayTimeEnd(chatId, timeOfTraining, "ENDTIME_");
+                String text = "Время начала тренировки: " + timeOfTraining;
                 executeEditMessageText(text, chatId, messageId);
 
-            }
-            else if(callbackData.startsWith("TIMECHOSEN_")) {
-                log.info("зашел еее");
-                executeEditMessageText("Тренировка сохранена", chatId, messageId);
-                Long coachId = Long.valueOf(extractCallBackData(callbackData));
-                Coach coach = coachRepository.findById(coachId).orElseThrow();
+            } else if (callbackData.startsWith("ENDTIME_")) {
+                String timeOfTraining = extractCallBackData(callbackData);
 
-                addTraining("10.3",coach, LocalTime.parse(extractCallBackData(callbackData)), LocalTime.parse(extractCallBackData(callbackData)), LocalDate.parse(extractCallBackData(callbackData)));
+                String text = "Время конца тренировки: " + timeOfTraining;
+                executeEditMessageText(text, chatId, messageId);
 
+                LocalTime endTime = parseTime(timeOfTraining);
+                coachTraining.get(chatId).setEndTime(endTime);
+
+                Coach coach = coachRepository.coachByChatId(chatId).get(0);
+                coachTraining.get(chatId).setCoach(coach);
+
+                addTraining(coachTraining.get(chatId));
+                sendMessage(chatId, "Тренировка сохранена");
+
+                displayCoachMenu(chatId);
             }
         }
+    }
+
+    private LocalDate parseDate(String date) {
+        String[] dayMonth = date.split("\\.");
+        return LocalDate.of(2023, Integer.parseInt(dayMonth[1]), Integer.parseInt(dayMonth[0]));
+    }
+
+    private LocalTime parseTime(String time) {
+        String[] hourMinute = time.split(":");
+        return LocalTime.of(Integer.parseInt(hourMinute[0]), Integer.parseInt(hourMinute[1]));
     }
 
     private void displayTimeEnd(Long chatId, String timeOfEnd, String callbackData) {
@@ -310,6 +341,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Ошибка при выводе возможных дат тренировки");
         }
     }
+
     private void displayCommandsForCoach(Long chatId, String studentId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -730,8 +762,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void addMark(int mark, Long studentId, Coach coach) throws Exception {
         markService.addMark(mark, coach, studentId);
     }
-    private void addTraining(String group, Coach coach, LocalTime startTime, LocalTime endTime, LocalDate date){
-        Training training = new Training(group, coach, startTime, endTime, date);
+
+    private void addTraining(Training training) {
         trainingService.addTraining(training);
     }
 
