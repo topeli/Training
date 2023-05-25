@@ -15,8 +15,6 @@ public class TrainingService {
     }
 
     public void addTraining(Training training) {
-        Coach coach = coachRepository.findById(1L).orElseThrow();
-        training.setCoach(coach);
         trainingRepository.save(training);
     }
 }

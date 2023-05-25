@@ -17,7 +17,7 @@ public class MainTrainingController {
 
 
     @PostMapping("/add/training")
-    public void addTraining(@RequestBody Training training) { // RequestBody можно добавить потом (чтобы показать, что создастся null)
+    public void addTraining(@RequestBody Training training) {
         trainingService.addTraining(training);
     }
 }
