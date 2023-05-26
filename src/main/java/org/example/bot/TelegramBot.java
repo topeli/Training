@@ -300,6 +300,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
                 coach.setChatId(null);
                 coachRepository.save(coach);
+                sendMessage(chatId,"Вы вышли из аккаунта");
+                displayMainMenu(chatId);
+            } else if (callbackData.startsWith("EXITSTUDENT_")) {
+                Long studentId = Long.valueOf(extractCallBackData(callbackData));
+                Student student = studentRepository.findById(studentId).orElseThrow();
+                student.setChatId(null);
+                studentRepository.save(student);
+                sendMessage(chatId,"Вы вышли из аккаунта");
                 displayMainMenu(chatId);
             }
         }
@@ -605,9 +613,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         InlineKeyboardButton marks = new InlineKeyboardButton();
         marks.setText("Мои оценки \uD83D\uDD1D\n");
         marks.setCallbackData("MYMARKS_" + student.getId());
+        InlineKeyboardButton exit = new InlineKeyboardButton();
+        exit.setText("Выйти из аккаунта \uD83D\uDD1D\n");
+        exit.setCallbackData("EXITSTUDENT_" + student.getId());
 
         rows.add(List.of(marks));
-
+        rows.add(List.of(exit));
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
 
