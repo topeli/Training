@@ -94,8 +94,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             Long chatId = update.getMessage().getChatId();
             switch (messageText) {
                 case "/start":
-                    startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
                     if (studentRepository.studentByChatId(chatId).isEmpty() && coachRepository.coachByChatId(chatId).isEmpty()) {
+                        startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
                         displayMainMenu(chatId);
                     } else {
                         sendMessage(chatId, "Вы уже зарегистрированы");
@@ -269,45 +269,41 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Тренировка сохранена");
 
                 displayCoachMenu(chatId);
-            }
-            else if (callbackData.startsWith("BACKTOMAINMENUCOACH_")){
+            } else if (callbackData.startsWith("BACKTOMAINMENUCOACH_")) {
                 displayCoachMenu(chatId);
                 executeEditMessageText("Вы вернулись в главное меню", chatId, messageId);
-            }
-            else if (callbackData.startsWith("SCHEDULECOACH_")){
+            } else if (callbackData.startsWith("SCHEDULECOACH_")) {
                 //trainingRepository.trainingByCoachId(chatId);
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
                 List<Training> trainings = trainingRepository.trainingByCoachId(coachId);
                 String message = "Мои тренировки:  \n";
-                for (Training training: trainings){
-                    message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "дата: "+ String.valueOf(training.getDate())  + " время: "+ String.valueOf(training.getStartTime()) + "-"+ String.valueOf(training.getEndTime()) + "\n";
+                for (Training training : trainings) {
+                    message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "дата: " + String.valueOf(training.getDate()) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
                 }
                 sendMessage(chatId, message);
                 displayCoachMenu(chatId);
-            }
-            else if(callbackData.startsWith("SCHEDULESTUDENT_")){
+            } else if (callbackData.startsWith("SCHEDULESTUDENT_")) {
                 String group = String.valueOf(extractCallBackData(callbackData));
                 List<Training> trainings = trainingRepository.trainingByStudent(group);
                 String message = "Мои тренировки:  \n";
-                for (Training training: trainings){
-                    message += "\uD83C\uDD98" + "Дата: "+ String.valueOf(training.getDate())  + " время: "+ String.valueOf(training.getStartTime()) + "-"+ String.valueOf(training.getEndTime()) + "\n";
+                for (Training training : trainings) {
+                    message += "\uD83C\uDD98" + "Дата: " + String.valueOf(training.getDate()) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
                 }
                 sendMessage(chatId, message);
                 displayStudentMenu(chatId);
-            }
-            else if(callbackData.startsWith("EXITCOACH_")){
+            } else if (callbackData.startsWith("EXITCOACH_")) {
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
                 coach.setChatId(null);
                 coachRepository.save(coach);
-                sendMessage(chatId,"Вы вышли из аккаунта");
+                sendMessage(chatId, "Вы вышли из аккаунта");
                 displayMainMenu(chatId);
             } else if (callbackData.startsWith("EXITSTUDENT_")) {
                 Long studentId = Long.valueOf(extractCallBackData(callbackData));
                 Student student = studentRepository.findById(studentId).orElseThrow();
                 student.setChatId(null);
                 studentRepository.save(student);
-                sendMessage(chatId,"Вы вышли из аккаунта");
+                sendMessage(chatId, "Вы вышли из аккаунта");
                 displayMainMenu(chatId);
             }
         }
@@ -799,10 +795,29 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void addMark(int mark, Long studentId, Coach coach) throws Exception {
-        markService.addMark(mark, coach, studentId);
+        Mark mark1 = markService.addMark(mark, coach, studentId);
+
+        if (mark1.getStudent().getChatId() != null) {
+            String text =
+                    "Тренер " + mark1.getCoach().getName() + " " + mark1.getCoach().getSurname() + " поставил вам оценку " + mark;
+            sendMessage(mark1.getStudent().getChatId(), text);
+        }
     }
 
     private void addTraining(Training training) {
         trainingService.addTraining(training);
+
+        List<Student> students = studentRepository.findByGroup(training.getClassGroup());
+
+        String text = "Вам добавили тренировку:\n" +
+                "Дата: " + training.getDate() + "\n" +
+                "Время: " + training.getStartTime() + " " + training.getEndTime() + "\n" +
+                "Тренер: " + training.getCoach().getName() + " " + training.getCoach().getSurname();
+
+        for (int i = 0; i < students.size(); i++) {
+            if (students.get(i).getChatId() != null) {
+                sendMessage(students.get(i).getChatId(), text);
+            }
+        }
     }
 }

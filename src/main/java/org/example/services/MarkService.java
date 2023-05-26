@@ -29,7 +29,7 @@ public class MarkService {
         this.coachRepository = coachRepository;
     }
 
-    public void addMark(int mark, Coach coach, Long studentId) throws Exception {
+    public Mark addMark(int mark, Coach coach, Long studentId) throws Exception {
         Mark mark1 = new Mark(mark);
         try {
             Student student = studentRepository.findById(studentId).orElseThrow();
@@ -40,6 +40,8 @@ public class MarkService {
         mark1.setCoach(coach);
 
         markRepository.save(mark1);
+
+        return mark1;
     }
 
     public List<Mark> getStudentMarks(String name) {
