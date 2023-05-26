@@ -16,4 +16,3 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     @Query(value = "select * from students1533 where chat_id=:chatId", nativeQuery = true)
     List<Student> studentByChatId(Long chatId);
 }
-
