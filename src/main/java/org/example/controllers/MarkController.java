@@ -23,5 +23,4 @@ public class MarkController {
     public List<Mark> getStudentMarks(@PathVariable String name){
         return markService.getStudentMarks(name);
     }
-
 }

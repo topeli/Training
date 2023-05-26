@@ -23,7 +23,7 @@ public class Coach {
     private Long experience;
     private String passwordCoach;
     private Long chatId;
-    private String classGroups; // например "10.3 10.4"
+    private String classGroups;
 
     public Coach(String name, String surname, Long age, Long e) {
         this.name = name;
@@ -31,5 +31,4 @@ public class Coach {
         this.age = age;
         this.experience = e;
     }
-
 }
