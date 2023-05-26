@@ -295,6 +295,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, message);
                 displayStudentMenu(chatId);
             }
+            else if(callbackData.startsWith("EXITCOACH_")){
+                Long coachId = Long.valueOf(extractCallBackData(callbackData));
+                Coach coach = coachRepository.findById(coachId).orElseThrow();
+                coach.setChatId(null);
+                coachRepository.save(coach);
+                displayMainMenu(chatId);
+            }
         }
     }
 
@@ -635,6 +642,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         addTraining.setText("Добавить тренировку \uD83D\uDE35\n");
         addTraining.setCallbackData("ADDTRAINING_" + coach.getId());
         rows.add(List.of(addTraining));
+
+        InlineKeyboardButton exitCoach = new InlineKeyboardButton();
+        exitCoach.setText("Выйти из аккаунта \uD83D\uDE35\n");
+        exitCoach.setCallbackData("EXITCOACH_" + coach.getId());
+        rows.add(List.of(exitCoach));
 
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
