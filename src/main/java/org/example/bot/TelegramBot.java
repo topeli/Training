@@ -132,7 +132,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (callbackData.startsWith("STUDENT_")) {
                 Long studentId = Long.valueOf(extractCallBackData(callbackData));
 
-                chosenStudent.putIfAbsent(chatId, studentId);
+                chosenStudent.put(chatId, studentId);
 
                 Student student = studentRepository.findById(studentId).orElseThrow();
                 String text = "Выбор оценки (" + student.getName() + " " + student.getSurname() + "):";
@@ -161,8 +161,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
                 executeEditMessageText(text, chatId, messageId);
 
-                userStudent.putIfAbsent(chatId, student);
-                userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD);
+                userStudent.put(chatId, student);
+                userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD);
 
                 sendMessage(chatId, "Введите пароль:");
             } else if (callbackData.startsWith("REGCOACH_")) {
@@ -176,8 +176,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String text = "Выбран тренер: " + coach.getName() + " " + coach.getSurname();
                 executeEditMessageText(text, chatId, messageId);
 
-                userCoach.putIfAbsent(chatId, coach);
-                userCondition.putIfAbsent(chatId, UserCondition.WAITING_FOR_PASSWORD_COACH);
+                userCoach.put(chatId, coach);
+                userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD_COACH);
 
                 sendMessage(chatId, "Введите пароль:");
             } else if (callbackData.startsWith("MYMARKS_")) {
@@ -211,7 +211,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else if (callbackData.startsWith("ADDTRAINING_")) {
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
 
-                coachTraining.putIfAbsent(chatId, new Training());
+                coachTraining.put(chatId, new Training());
 
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
                 displayCoachGroups(chatId, coach, "TRAININGGROUP_");
