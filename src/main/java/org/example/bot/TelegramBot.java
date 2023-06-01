@@ -14,6 +14,7 @@ import org.example.repositories.StudentRepository;
 import org.example.repositories.TrainingRepository;
 import org.example.services.MarkService;
 import org.example.services.TrainingService;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -208,14 +209,30 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayCoachGroups(chatId, coach, "GROUP_");
 
 
-            } else if (callbackData.startsWith("ADDTRAINING_")) {
+            } else if (callbackData.startsWith("CHOOSEACTIVITY_")) {
+                Long coachId = Long.valueOf(extractCallBackData(callbackData));
+
+
+                Coach coach = coachRepository.findById(coachId).orElseThrow();
+                chooseActivity(chatId, coach, "ADDTRAINING_");
+            }
+            else if (callbackData.startsWith("ADDTRAINING_")) {
+                String activity = extractCallBackData(callbackData);
+                coachTraining.get(chatId).setActivity(activity);
+                String text = "Выбрана тренировка: " + activity;
+                executeEditMessageText(text, chatId, messageId);
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
 
                 coachTraining.put(chatId, new Training());
 
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
+
                 displayCoachGroups(chatId, coach, "TRAININGGROUP_");
-            } else if (callbackData.startsWith("TRAININGGROUP_")) {
+
+
+            }
+
+            else if (callbackData.startsWith("TRAININGGROUP_")) {
                 String group = extractCallBackData(callbackData);
                 coachTraining.get(chatId).setClassGroup(group);
 
@@ -307,6 +324,80 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayMainMenu(chatId);
             }
         }
+    }
+
+    private void chooseActivity(Long chatId, Coach coach, String callbackData) {
+        /*SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выберите вид тренировки:");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton football = new InlineKeyboardButton();
+        football.setText("Футбол⚽️"); //
+        football.setCallbackData(callbackData + football + studentId);
+        rows.add(List.of(football));
+
+        InlineKeyboardButton sambo = new InlineKeyboardButton();
+        sambo.setText("Самбо\uD83E\uDD3C\n");
+        sambo.setCallbackData(callbackData + sambo + studentId);
+        rows.add(List.of(sambo));
+        InlineKeyboardButton kik = new InlineKeyboardButton();
+        kik.setText("Кикбоксинг\uD83E\uDD4A\n");
+        kik.setCallbackData(callbackData + kik + studentId);
+        rows.add(List.of(kik));
+        InlineKeyboardButton free = new InlineKeyboardButton();
+        free.setText("Вольная борьба\uD83E\uDD1C\n");
+        free.setCallbackData(callbackData + free + studentId);
+        rows.add(List.of(free));
+        InlineKeyboardButton basketball = new InlineKeyboardButton();
+        basketball.setText("Баскетбол\uD83C\uDFC0");//
+        basketball.setCallbackData(callbackData + basketball + studentId);
+        rows.add(List.of(basketball));
+        InlineKeyboardButton afk = new InlineKeyboardButton();
+        afk.setText("АФК\uD83D\uDEFC\n"); //
+        afk.setCallbackData(callbackData+ afk + studentId);
+        rows.add(List.of(afk));
+        InlineKeyboardButton swim = new InlineKeyboardButton();
+        swim.setText("Плавание\uD83D\uDC33\n"); //
+        swim.setCallbackData(callbackData + swim + studentId);
+        rows.add(List.of(swim));
+        InlineKeyboardButton gym = new InlineKeyboardButton();
+        gym.setText("Тренажерный зал\uD83C\uDFCB\u200D♀️\n"); //
+        gym.setCallbackData(callbackData + gym + studentId);
+        rows.add(List.of(gym));
+
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе меню активностей:" + e.getMessage());
+        }*/
+        String[] activities = coach.getActivity().split(" ");
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор активности:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        for (int i = 0; i < activities.length; i++) {
+            InlineKeyboardButton activity = new InlineKeyboardButton();
+            activity.setText(activities[i]);
+            activity.setCallbackData(callbackData + activities[i]);
+            buttonsInLine.add(activity);
+        }
+        rowsInLine.add(buttonsInLine);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("ошибка");
+        }
+
     }
 
     private LocalDate parseDate(String date) {
@@ -610,7 +701,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         marks.setText("Мои оценки \uD83D\uDD1D\n");
         marks.setCallbackData("MYMARKS_" + student.getId());
         InlineKeyboardButton exit = new InlineKeyboardButton();
-        exit.setText("Выйти из аккаунта \uD83D\uDD1D\n");
+        exit.setText("Выйти из аккаунта \uD83E\uDD7A\n");
         exit.setCallbackData("EXITSTUDENT_" + student.getId());
 
         rows.add(List.of(marks));
@@ -647,11 +738,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         InlineKeyboardButton addTraining = new InlineKeyboardButton();
         addTraining.setText("Добавить тренировку \uD83D\uDE35\n");
-        addTraining.setCallbackData("ADDTRAINING_" + coach.getId());
+        addTraining.setCallbackData("CHOOSEACTIVITY_" + coach.getId());
         rows.add(List.of(addTraining));
 
         InlineKeyboardButton exitCoach = new InlineKeyboardButton();
-        exitCoach.setText("Выйти из аккаунта \uD83D\uDE35\n");
+        exitCoach.setText("Выйти из аккаунта \uD83D\uDEAA\n");
         exitCoach.setCallbackData("EXITCOACH_" + coach.getId());
         rows.add(List.of(exitCoach));
 
@@ -820,4 +911,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
     }
+    @Scheduled
+    private void sendNotification()
+    {
+        trainingRepository.allTrainings();
+        List<Student> students = studentRepository.findAll();
+
+        String text = "У вас скоро тренировка";
+
+        for (int i = 0; i < students.size(); i++) {
+            if (students.get(i).getChatId() != null) {
+                sendMessage(students.get(i).getChatId(), text);
+            }
+        }
+    }
+
 }
