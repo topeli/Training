@@ -14,6 +14,7 @@ import org.example.repositories.StudentRepository;
 import org.example.repositories.TrainingRepository;
 import org.example.services.MarkService;
 import org.example.services.TrainingService;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -214,6 +215,16 @@ public class TelegramBot extends TelegramLongPollingBot {
                 coachTraining.put(chatId, new Training());
 
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
+                chooseActivity(chatId, coach, "CHOOSEACTIVITY_");
+
+            } else if (callbackData.startsWith("CHOOSEACTIVITY_")) {
+                String activity = extractCallBackData(callbackData);
+                coachTraining.get(chatId).setActivity(activity);
+                String text = "Выбрана тренировка: " + activity;
+                executeEditMessageText(text, chatId, messageId);
+
+                Coach coach = coachRepository.coachByChatId(chatId).get(0);
+
                 displayCoachGroups(chatId, coach, "TRAININGGROUP_");
             } else if (callbackData.startsWith("TRAININGGROUP_")) {
                 String group = extractCallBackData(callbackData);
@@ -307,6 +318,31 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayMainMenu(chatId);
             }
         }
+    }
+
+    private void chooseActivity(Long chatId, Coach coach, String callbackData) {
+        String[] activities = coach.getActivity().split(" ");
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор активности:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        for (int i = 0; i < activities.length; i++) {
+            List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+            InlineKeyboardButton activity = new InlineKeyboardButton();
+            activity.setText(activities[i]);
+            activity.setCallbackData(callbackData + activities[i]);
+            buttonsInLine.add(activity);
+            rowsInLine.add(buttonsInLine);
+        }
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("ошибка");
+        }
+
     }
 
     private LocalDate parseDate(String date) {
@@ -610,7 +646,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         marks.setText("Мои оценки \uD83D\uDD1D\n");
         marks.setCallbackData("MYMARKS_" + student.getId());
         InlineKeyboardButton exit = new InlineKeyboardButton();
-        exit.setText("Выйти из аккаунта \uD83D\uDD1D\n");
+        exit.setText("Выйти из аккаунта \uD83E\uDD7A\n");
         exit.setCallbackData("EXITSTUDENT_" + student.getId());
 
         rows.add(List.of(marks));
@@ -651,7 +687,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         rows.add(List.of(addTraining));
 
         InlineKeyboardButton exitCoach = new InlineKeyboardButton();
-        exitCoach.setText("Выйти из аккаунта \uD83D\uDE35\n");
+        exitCoach.setText("Выйти из аккаунта \uD83D\uDEAA\n");
         exitCoach.setCallbackData("EXITCOACH_" + coach.getId());
         rows.add(List.of(exitCoach));
 
@@ -820,4 +856,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
     }
+
+    @Scheduled
+    private void sendNotification() {
+        trainingRepository.allTrainings();
+        List<Student> students = studentRepository.findAll();
+
+        String text = "У вас скоро тренировка";
+
+        for (int i = 0; i < students.size(); i++) {
+            if (students.get(i).getChatId() != null) {
+                sendMessage(students.get(i).getChatId(), text);
+            }
+        }
+    }
+
 }
