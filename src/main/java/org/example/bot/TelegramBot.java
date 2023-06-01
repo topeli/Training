@@ -209,8 +209,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayCoachGroups(chatId, coach, "GROUP_");
 
 
-            }
-            else if (callbackData.startsWith("ADDTRAINING_")) {
+            } else if (callbackData.startsWith("ADDTRAINING_")) {
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
 
                 coachTraining.put(chatId, new Training());
@@ -227,9 +226,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Coach coach = coachRepository.coachByChatId(chatId).get(0);
 
                 displayCoachGroups(chatId, coach, "TRAININGGROUP_");
-            }
-
-            else if (callbackData.startsWith("TRAININGGROUP_")) {
+            } else if (callbackData.startsWith("TRAININGGROUP_")) {
                 String group = extractCallBackData(callbackData);
                 coachTraining.get(chatId).setClassGroup(group);
 
@@ -859,9 +856,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
     }
+
     @Scheduled
-    private void sendNotification()
-    {
+    private void sendNotification() {
         trainingRepository.allTrainings();
         List<Student> students = studentRepository.findAll();
 
