@@ -11,7 +11,5 @@ public interface TrainingRepository extends JpaRepository<Training, Long> {
     List<Training> trainingByCoachId(Long coachId);
     @Query(value = "select *  from trainings  where class_group = :classGroup ORDER by date, start_time asc", nativeQuery = true)
     List<Training> trainingByStudent(String classGroup);
-    @Query(value = "select * from trainings", nativeQuery = true)
-    List<Training> allTrainings();
 
 }
