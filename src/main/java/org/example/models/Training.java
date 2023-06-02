@@ -4,14 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "trainings")
@@ -41,5 +37,14 @@ public class Training {
         this.startTime = startTime;
         this.classGroup = group;
         this.date = date;
+    }
+
+    @Override
+    public String toString() {
+        return "Training{" +
+                "startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", date=" + date +
+                '}';
     }
 }

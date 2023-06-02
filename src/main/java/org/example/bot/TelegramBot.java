@@ -235,11 +235,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
                 executeEditMessageText(text, chatId, messageId);
             } else if (callbackData.startsWith("TRAININGDATE_")) {
-                displayTime(chatId, "STARTTIME_");
                 String date = extractCallBackData(callbackData);
-
                 LocalDate trainingDate = parseDate(date);
                 coachTraining.get(chatId).setDate(trainingDate);
+
+                displayTime(chatId, "STARTTIME_");
 
                 String text = "Выбрана дата: " + date;
                 executeEditMessageText(text, chatId, messageId);
@@ -284,7 +284,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayCoachMenu(chatId);
             } else if (callbackData.startsWith("SCHEDULESTUDENT_")) {
                 String group = String.valueOf(extractCallBackData(callbackData));
-                List<Training> trainings = trainingRepository.trainingByStudent(group);
+                List<Training> trainings = trainingRepository.trainingByClassGroup(group);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
                     message += "\uD83C\uDD98" + "Дата: " + String.valueOf(training.getDate()) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
@@ -346,18 +346,26 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void displayTime(Long chatId, String callbackData) {
         LocalTime timeOfTraining = LocalTime.parse("10:00");
+
+        String group = coachTraining.get(chatId).getClassGroup();
+        LocalDate chosenDate = coachTraining.get(chatId).getDate();
+
+        List<Training> groupTrainings = trainingRepository.trainingByClassGroup(group);
+
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText("Выбор начала тренировки:");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
-        for (int i = 0; i < 6; i++) {
-            InlineKeyboardButton time = new InlineKeyboardButton();
-            time.setText(timeOfTraining.toString());
-            time.setCallbackData(callbackData + timeOfTraining);
-            timeOfTraining = timeOfTraining.plusHours(2L);
-            buttonsInLine.add(time);
+        for (int i = 0; i < 7; i++) {
+            if (canStart(timeOfTraining, chosenDate, groupTrainings)) {
+                InlineKeyboardButton time = new InlineKeyboardButton();
+                time.setText(timeOfTraining.toString());
+                time.setCallbackData(callbackData + timeOfTraining);
+                buttonsInLine.add(time);
+            }
+            timeOfTraining = timeOfTraining.plusHours(1L);
         }
         rowsInLine.add(buttonsInLine);
         markup.setKeyboard(rowsInLine);
@@ -368,6 +376,22 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Ошибка при выводе возможных дат тренировки");
         }
     }
+
+    private boolean canStart(LocalTime timeOfTraining, LocalDate chosenDate, List<Training> groupTrainings) {
+        for (Training training : groupTrainings) {
+            if (training.getDate().equals(chosenDate)) {
+                log.info("Даты совпали!");
+                if (timeOfTraining.isAfter(training.getStartTime()) && timeOfTraining.isBefore(training.getEndTime())) {
+                    return false;
+                }
+                if (timeOfTraining.equals(training.getStartTime())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 
     private void displayCommandsForCoach(Long chatId, String studentId) {
         SendMessage message = new SendMessage();
