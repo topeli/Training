@@ -157,6 +157,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     throw new RuntimeException(e);
                 }
             } else if (callbackData.startsWith("STUDENTGROUP_")) {
+                if(!extractCallBackData(callbackData).equals("назад")){
                 String studentId = extractCallBackData(callbackData);
                 Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
                 String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
@@ -165,7 +166,15 @@ public class TelegramBot extends TelegramLongPollingBot {
                 userStudent.put(chatId, student);
                 userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD);
 
-                sendMessage(chatId, "Введите пароль:");
+                sendMessage(chatId, "Введите пароль:");}
+                else {
+                    String nazad = extractCallBackData(callbackData);
+                    nazad = "Выбрана команда: " + nazad;
+
+                    executeEditMessageText(nazad, chatId, messageId);
+                    //displayMainMenu(chatId);
+                    getGroups(chatId, "REGGROUP_");
+                }
             } else if (callbackData.startsWith("REGCOACH_")) {
                 String text = "Выбрана роль: тренер";
                 executeEditMessageText(text, chatId, messageId);
@@ -193,15 +202,27 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayStudentMenu(chatId);
 
             } else if (callbackData.startsWith("REGSTUDENT_")) {
+
                 String text = "Выбрана роль: студент";
                 executeEditMessageText(text, chatId, messageId);
                 getGroups(chatId, "REGGROUP_");
             } else if (callbackData.startsWith("REGGROUP_")) {
-                String group = extractCallBackData(callbackData);
-                String text = "Выбрана группа: " + group;
+                if(!extractCallBackData(callbackData).equals("назад")){
+                    log.info(extractCallBackData(callbackData));
+                    String group = extractCallBackData(callbackData);
+                    String text = "Выбрана группа: " + group;
 
-                executeEditMessageText(text, chatId, messageId);
-                getStudentsInGroup(chatId, group);
+                    executeEditMessageText(text, chatId, messageId);
+                    getStudentsInGroup(chatId, group);
+                }
+                else {
+                    String nazad = extractCallBackData(callbackData);
+                    nazad = "Выбрана команда: " + nazad;
+
+                    executeEditMessageText(nazad, chatId, messageId);
+                    displayMainMenu(chatId);
+                }
+
 
             } else if (callbackData.startsWith("COACHGROUPS_")) {
                 Long coachId = Long.valueOf(extractCallBackData(callbackData));
@@ -381,6 +402,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void displayTime(Long chatId, String callbackData) {
+        //еще раз достать тренера из бд и посмотреть его тренировки именно в этот день
         LocalTime timeOfTraining = LocalTime.parse("10:00");
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -389,11 +411,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
-            InlineKeyboardButton time = new InlineKeyboardButton();
-            time.setText(timeOfTraining.toString());
-            time.setCallbackData(callbackData + timeOfTraining);
-            timeOfTraining = timeOfTraining.plusHours(2L);
-            buttonsInLine.add(time);
+            Long coachId = Long.valueOf(extractCallBackData(callbackData));
+            Coach coach = coachRepository.findById(Long.valueOf(coachId)).orElseThrow();
+            Training training = trainingRepository.findById(coachId).orElseThrow();
+            if(training.getStartTime()!=timeOfTraining)
+            {
+                InlineKeyboardButton time = new InlineKeyboardButton();
+                time.setText(timeOfTraining.toString());
+                time.setCallbackData(callbackData + timeOfTraining);
+                timeOfTraining = timeOfTraining.plusHours(2L);
+                buttonsInLine.add(time);
+            }
         }
         rowsInLine.add(buttonsInLine);
         markup.setKeyboard(rowsInLine);
@@ -442,14 +470,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+        //достать тренера из бд и его тренировки
+        Long coachId = Long.valueOf(extractCallBackData(callbackData));
+        Coach coach = coachRepository.findById(Long.valueOf(coachId)).orElseThrow();
+        Training training = trainingRepository.findById(coachId).orElseThrow();
         for (int i = 0; i < 8; i++) {
             InlineKeyboardButton date = new InlineKeyboardButton();
             date.setText(currentDate.getDayOfMonth() + "." + String.valueOf(currentDate.getMonth().ordinal() + 1));
             date.setCallbackData(callbackData + currentDate.getDayOfMonth() + "." + String.valueOf(currentDate.getMonth().ordinal() + 1));
             buttonsInLine.add(date);
-
             currentDate = currentDate.plusDays(1L);
+            //проверить что есть хотя бы одно свободное окно у тренера в этот день
+            //если нет - скип, дату не добавляем
+
         }
+
         rowsInLine.add(buttonsInLine);
         markup.setKeyboard(rowsInLine);
         message.setReplyMarkup(markup);
@@ -480,7 +515,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("ошибка");
+            log.error("ошибка в выборе группы");
         }
     }
 
@@ -588,6 +623,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         rowsInLine.add(buttonsInLine);
         markup.setKeyboard(rowsInLine);
+        InlineKeyboardButton nazad = new InlineKeyboardButton();
+        nazad.setText("↩️");
+        nazad.setCallbackData(callbackData + "назад");
+        buttonsInLine.add(nazad);
         message.setReplyMarkup(markup);
         try {
             execute(message);
@@ -708,7 +747,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
+        List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
         List<Student> students = studentController.getStudentsByGroup(group);
         for (int i = 0; i < students.size(); i++) {
             InlineKeyboardButton student = new InlineKeyboardButton();
@@ -716,6 +755,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             student.setCallbackData("STUDENTGROUP_" + students.get(i).getId());
             rows.add(List.of(student));
         }
+        rows.add(buttonsInLine);
+        InlineKeyboardButton nazad = new InlineKeyboardButton();
+        nazad.setText("↩️");
+        nazad.setCallbackData("STUDENTGROUP_" + "назад");
+        buttonsInLine.add(nazad);
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
         try {
