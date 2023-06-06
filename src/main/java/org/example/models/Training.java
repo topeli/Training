@@ -31,12 +31,14 @@ public class Training {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm", timezone = "Europe/Moscow")
     private LocalTime endTime;
     private LocalDate date;
-    public Training(String group, Coach coach, LocalTime startTime, LocalTime endTime, LocalDate date) {
+    private String activity;
+    public Training(String group, Coach coach, LocalTime startTime, LocalTime endTime, LocalDate date, String activity) {
         this.coach = coach;
         this.endTime = endTime;
         this.startTime = startTime;
         this.classGroup = group;
         this.date = date;
+        this.activity = activity;
     }
 
     @Override

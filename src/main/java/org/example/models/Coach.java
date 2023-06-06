@@ -24,11 +24,13 @@ public class Coach {
     private String passwordCoach;
     private Long chatId;
     private String classGroups;
+    private String activity;
 
-    public Coach(String name, String surname, Long age, Long e) {
+    public Coach(String name, String surname, Long age, String activity, Long e) {
         this.name = name;
         this.surname=surname;
         this.age = age;
+        this.activity = activity;
         this.experience = e;
     }
 }
