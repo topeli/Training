@@ -214,6 +214,15 @@ public class TelegramBot extends TelegramLongPollingBot {
                 coachTraining.put(chatId, new Training());
 
                 Coach coach = coachRepository.findById(coachId).orElseThrow();
+                chooseActivity(chatId, coach, "CHOOSEACTIVITY_");
+            } else if (callbackData.startsWith("CHOOSEACTIVITY_")) {
+                String activity = extractCallBackData(callbackData);
+                coachTraining.get(chatId).setActivity(activity);
+                String text = "Выбрана тренировка: " + activity;
+                executeEditMessageText(text, chatId, messageId);
+
+                Coach coach = coachRepository.coachByChatId(chatId).get(0);
+
                 displayCoachGroups(chatId, coach, "TRAININGGROUP_");
             } else if (callbackData.startsWith("TRAININGGROUP_")) {
                 String group = extractCallBackData(callbackData);
@@ -317,6 +326,31 @@ public class TelegramBot extends TelegramLongPollingBot {
     private LocalTime parseTime(String time) {
         String[] hourMinute = time.split(":");
         return LocalTime.of(Integer.parseInt(hourMinute[0]), Integer.parseInt(hourMinute[1]));
+    }
+
+    private void chooseActivity(Long chatId, Coach coach, String callbackData) {
+        String[] activities = coach.getActivity().split(" ");
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор активности:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        for (int i = 0; i < activities.length; i++) {
+            List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+            InlineKeyboardButton activity = new InlineKeyboardButton();
+            activity.setText(activities[i]);
+            activity.setCallbackData(callbackData + activities[i]);
+            buttonsInLine.add(activity);
+            rowsInLine.add(buttonsInLine);
+        }
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("ошибка");
+        }
+
     }
 
     private void displayTimeEnd(Long chatId, String timeOfEnd, String callbackData) {
