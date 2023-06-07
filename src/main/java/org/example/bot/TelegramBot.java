@@ -14,6 +14,7 @@ import org.example.repositories.StudentRepository;
 import org.example.repositories.TrainingRepository;
 import org.example.services.MarkService;
 import org.example.services.TrainingService;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -188,7 +189,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     message += String.valueOf(mark.getMark());
                     message += " ";
                 }
-                executeEditMessageText(message,chatId, messageId);
+                executeEditMessageText(message, chatId, messageId);
                 displayStudentMenu(chatId);
 
             } else if (callbackData.startsWith("REGSTUDENT_")) {
@@ -234,12 +235,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String text = "Выбрана группа: " + group;
                 executeEditMessageText(text, chatId, messageId);
             } else if (callbackData.startsWith("GROUP_")) {
-                if(!extractCallBackData(callbackData).equals("назад")){
+                if (!extractCallBackData(callbackData).equals("назад")) {
                     String group = extractCallBackData(callbackData);
                     getStudentsInGroupCoach(chatId, group);
-                    executeEditMessageText("Выбрана группа: " + group, chatId, messageId);}
-
-                else {
+                    executeEditMessageText("Выбрана группа: " + group, chatId, messageId);
+                } else {
                     String nazad = extractCallBackData(callbackData);
                     nazad = "Вы вернулись в назад";
 
@@ -249,15 +249,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             } else if (callbackData.startsWith("STUDENTGROUPCOACH_")) {
 
-                if(!extractCallBackData(callbackData).equals("назад")) {
+                if (!extractCallBackData(callbackData).equals("назад")) {
                     String studentId = extractCallBackData(callbackData);
                     displayCommandsForCoach(chatId, studentId);
                     Student student = studentRepository.findById(Long.valueOf(studentId)).orElseThrow();
                     String text = "Выбран студент: " + student.getName() + " " + student.getSurname();
                     executeEditMessageText(text, chatId, messageId);
-                }
-
-                else {
+                } else {
                     String nazad = extractCallBackData(callbackData);
                     nazad = "Вы вернулись в назад";
 
@@ -297,7 +295,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 coachTraining.get(chatId).setCoach(coach);
 
                 addTraining(coachTraining.get(chatId));
-                executeEditMessageText("Тренировка сохранена",chatId, messageId);
+                executeEditMessageText("Тренировка сохранена", chatId, messageId);
 
                 displayCoachMenu(chatId);
             } else if (callbackData.startsWith("BACKTOMAINMENUCOACH_")) {
@@ -311,7 +309,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 for (Training training : trainings) {
                     message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "дата: " + String.valueOf(training.getDate()) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
                 }
-                executeEditMessageText(message,chatId, messageId);
+                executeEditMessageText(message, chatId, messageId);
                 displayCoachMenu(chatId);
             } else if (callbackData.startsWith("SCHEDULESTUDENT_")) {
                 String group = String.valueOf(extractCallBackData(callbackData));
@@ -335,7 +333,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Student student = studentRepository.findById(studentId).orElseThrow();
                 student.setChatId(null);
                 studentRepository.save(student);
-                executeEditMessageText("Вы вышли из аккаунта",chatId, messageId);
+                executeEditMessageText("Вы вышли из аккаунта", chatId, messageId);
                 displayMainMenu(chatId);
             }
         }
@@ -375,6 +373,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
     }
+
     private void displayTimeEnd(Long chatId, String timeOfEnd, String callbackData) {
         LocalTime timeOfTraining = LocalTime.parse(timeOfEnd);
         SendMessage message = new SendMessage();
@@ -802,29 +801,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void putMark(Long chatId) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("Кому вы хотите добавить оценку:");
-
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        List<Student> students = studentController.getAllStudents();
-        for (int i = 0; i < students.size(); i++) {
-            InlineKeyboardButton student = new InlineKeyboardButton();
-            student.setText(students.get(i).getName() + " " + students.get(i).getSurname());
-            student.setCallbackData("STUDENT_" + students.get(i).getId());
-            rows.add(List.of(student));
-        }
-        markup.setKeyboard(rows);
-        message.setReplyMarkup(markup);
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            log.error("ошибка");
-        }
-    }
 
     private void executeEditMessageText(String text, Long chatId, int messageId) {
         EditMessageText messageText = new EditMessageText();
@@ -900,6 +876,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<Student> students = studentRepository.findByGroup(training.getClassGroup());
 
         String text = "Вам добавили тренировку:\n" +
+                "Вид тренировки: " + training.getActivity() + "\n" +
                 "Дата: " + training.getDate() + "\n" +
                 "Время: " + training.getStartTime() + " " + training.getEndTime() + "\n" +
                 "Тренер: " + training.getCoach().getName() + " " + training.getCoach().getSurname();
@@ -910,4 +887,68 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
     }
+
+    @Scheduled(fixedDelay = 86400000)
+    private void sendNotificationDayBeforeTraining() {
+        List<Training> trainings = trainingRepository.findAll();
+
+        for (int i = 0; i < trainings.size(); i++) {
+            // проверяем, что тренировка будет завтра
+            if (trainings.get(i).getDate().equals(LocalDate.now().plusDays(1))) {
+                if (trainings.get(i).getCoach().getChatId() != null) {
+                    String textForCoach = "Завтра у вас тренировка:\n" +
+                            "Вид тренировки: " + trainings.get(i).getActivity() + "\n" +
+                            "Дата: " + trainings.get(i).getDate() + "\n" +
+                            "Время: " + trainings.get(i).getStartTime() + " " + trainings.get(i).getEndTime() + "\n" +
+                            "Группа: " + trainings.get(i).getClassGroup();
+                    sendMessage(trainings.get(i).getCoach().getChatId(), textForCoach);
+                }
+                String text = "Завтра у вас тренировка:\n" +
+                        "Вид тренировки: " + trainings.get(i).getActivity() + "\n" +
+                        "Дата: " + trainings.get(i).getDate() + "\n" +
+                        "Время: " + trainings.get(i).getStartTime() + " " + trainings.get(i).getEndTime() + "\n" +
+                        "Тренер: " + trainings.get(i).getCoach().getName() + " " + trainings.get(i).getCoach().getSurname();
+
+                List<Student> studentsInGroup = studentRepository.findByGroup(trainings.get(i).getClassGroup());
+                for (int j = 0; j < studentsInGroup.size(); j++) {
+                    log.info("Sending message for student " + studentsInGroup.get(j).getSurname());
+                    sendMessage(studentsInGroup.get(j).getChatId(), text);
+                }
+            }
+        }
+    }
+
+    /*
+    @Scheduled(fixedDelay = 3600000)
+    private void sendNotificationHourBeforeTraining() {
+        List<Training> trainings = trainingRepository.findAll();
+
+        for (int i = 0; i < trainings.size(); i++) {
+            // проверяем, что тренировка будет сегодня
+            if (trainings.get(i).getDate().equals(LocalDate.now())) {
+                // проверяем, что тренировка в течение часа будет тренировка
+                if (trainings.get(i).getStartTime().isBefore(LocalTime.now().plusHours(1))) {
+                    if (trainings.get(i).getCoach().getChatId() != null) {
+                        String textForCoach = "В течение часа у вас будет тренировка:\n" +
+                                "Вид тренировки: " + trainings.get(i).getActivity() + "\n" +
+                                "Дата: " + trainings.get(i).getDate() + "\n" +
+                                "Время: " + trainings.get(i).getStartTime() + " " + trainings.get(i).getEndTime() + "\n" +
+                                "Группа: " + trainings.get(i).getClassGroup();
+                        sendMessage(trainings.get(i).getCoach().getChatId(), textForCoach);
+                    }
+                    String text = "В течение часа у вас будет тренировка:\n" +
+                            "Вид тренировки: " + trainings.get(i).getActivity() + "\n" +
+                            "Дата: " + trainings.get(i).getDate() + "\n" +
+                            "Время: " + trainings.get(i).getStartTime() + " " + trainings.get(i).getEndTime() + "\n" +
+                            "Тренер: " + trainings.get(i).getCoach().getName() + " " + trainings.get(i).getCoach().getSurname();
+
+                    List<Student> studentsInGroup = studentRepository.findByGroup(trainings.get(i).getClassGroup());
+                    for (int j = 0; j < studentsInGroup.size(); j++) {
+                        log.info("Sending message for student " + studentsInGroup.get(j).getSurname());
+                        sendMessage(studentsInGroup.get(j).getChatId(), text);
+                    }
+                }
+            }
+        }
+    }*/
 }
