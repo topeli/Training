@@ -920,6 +920,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     /*
 
+
+
     @Scheduled(fixedDelay = 3600000)
     private void sendNotificationHourBeforeTraining() {
         List<Training> trainings = trainingRepository.findAll();
