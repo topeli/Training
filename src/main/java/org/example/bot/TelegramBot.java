@@ -240,17 +240,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 } else {
                     String nazad;
                     nazad = "Вы вернулись в назад";
-
                     executeEditMessageText(nazad, chatId, messageId);
                     Coach coach = coachRepository.coachByChatId(chatId).get(0);
                     //chooseActivity(chatId, coach, "CHOOSEACTIVITY_");
                     displayCoachMenu(chatId);
                     }
-
-
             } else if (callbackData.startsWith("ADDTRAINING_")) {
-
-
                     Long coachId = Long.valueOf(extractCallBackData(callbackData));
 
                     coachTraining.put(chatId, new Training());
@@ -362,7 +357,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 coachTraining.get(chatId).setCoach(coach);
 
                 addTraining(coachTraining.get(chatId));
-                executeEditMessageText("Тренировка сохранена", chatId, messageId);
+                sendMessage(chatId,"Тренировка сохранена");
 
                 displayCoachMenu(chatId);
             } else if (callbackData.startsWith("BACKTOMAINMENUCOACH_")) {
@@ -449,27 +444,38 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void displayTimeEnd(Long chatId, String timeOfEnd, String callbackData) {
         LocalTime timeOfTraining = LocalTime.parse(timeOfEnd);
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("Выбор конца тренировки:");
+
+        String group = coachTraining.get(chatId).getClassGroup();
+        LocalDate chosenDate = coachTraining.get(chatId).getDate();
+
+        List<Training> groupTrainings = trainingRepository.trainingByClassGroup(group);
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             timeOfTraining = timeOfTraining.plusHours(1L);
+            if(canStart(timeOfTraining, chosenDate, groupTrainings)){
             InlineKeyboardButton time = new InlineKeyboardButton();
             time.setText(timeOfTraining.toString());
             time.setCallbackData(callbackData + timeOfTraining);
-            buttonsInLine.add(time);
+            buttonsInLine.add(time);}
         }
         rowsInLine.add(buttonsInLine);
-        markup.setKeyboard(rowsInLine);
-        message.setReplyMarkup(markup);
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            log.error("Ошибка при выводе возможных дат тренировки");
+        if(buttonsInLine.isEmpty()){
+            sendMessage(chatId,"Все время занято");
+            displayCoachMenu(chatId);
         }
+        else{
+            SendMessage message = new SendMessage();
+            message.setChatId(String.valueOf(chatId));
+            message.setText("Выбор конца тренировки:");
+            markup.setKeyboard(rowsInLine);
+            message.setReplyMarkup(markup);
+            try {
+                execute(message);
+            } catch (TelegramApiException e) {
+                log.error("Ошибка при выводе возможных дат тренировки");
+            }}
     }
 
     private void displayTime(Long chatId, String callbackData) {
@@ -479,10 +485,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         LocalDate chosenDate = coachTraining.get(chatId).getDate();
 
         List<Training> groupTrainings = trainingRepository.trainingByClassGroup(group);
-
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("Выбор начала тренировки:");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
@@ -496,13 +498,21 @@ public class TelegramBot extends TelegramLongPollingBot {
             timeOfTraining = timeOfTraining.plusHours(1L);
         }
         rowsInLine.add(buttonsInLine);
+        if(buttonsInLine.isEmpty()){
+            sendMessage(chatId,"Все время занято");
+            displayCoachMenu(chatId);
+        }
+        else{
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор начала тренировки:");
         markup.setKeyboard(rowsInLine);
         message.setReplyMarkup(markup);
         try {
             execute(message);
         } catch (TelegramApiException e) {
             log.error("Ошибка при выводе возможных дат тренировки");
-        }
+        }}
     }
 
     private boolean canStart(LocalTime timeOfTraining, LocalDate chosenDate, List<Training> groupTrainings) {
@@ -980,7 +990,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Scheduled(fixedDelay = 86400000)
     private void sendNotificationDayBeforeTraining() {
         List<Training> trainings = trainingRepository.findAll();
-
         for (int i = 0; i < trainings.size(); i++) {
             // проверяем, что тренировка будет завтра
             if (trainings.get(i).getDate().equals(LocalDate.now().plusDays(1))) {
@@ -1008,9 +1017,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     /*
-
-
-
     @Scheduled(fixedDelay = 3600000)
     private void sendNotificationHourBeforeTraining() {
         List<Training> trainings = trainingRepository.findAll();
