@@ -236,14 +236,16 @@ public class TelegramBot extends TelegramLongPollingBot {
                     Long coachId = Long.valueOf(extractCallBackData(callbackData));
                     Coach coach = coachRepository.findById(coachId).orElseThrow();
                     executeEditMessageText("Отображаем группы", chatId, messageId);
-                    displayCoachGroups(chatId, coach, "GROUP_");
+                    displayCoachGroups(chatId, coach, "COACHGROUPS_");
                 } else {
                     String nazad;
                     nazad = "Вы вернулись в назад";
 
                     executeEditMessageText(nazad, chatId, messageId);
                     Coach coach = coachRepository.coachByChatId(chatId).get(0);
-                    chooseActivity(chatId, coach, "CHOOSEACTIVITY_");}
+                    //chooseActivity(chatId, coach, "CHOOSEACTIVITY_");
+                    displayCoachMenu(chatId);
+                    }
 
 
             } else if (callbackData.startsWith("ADDTRAINING_")) {
@@ -780,7 +782,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         marks.setText("Мои оценки \uD83D\uDD1D\n");
         marks.setCallbackData("MYMARKS_" + student.getId());
         InlineKeyboardButton exit = new InlineKeyboardButton();
-        exit.setText("Выйти из аккаунта \uD83D\uDD1D\n");
+        exit.setText("Выйти из аккаунта \uD83D\uDEAA\n");
         exit.setCallbackData("EXITSTUDENT_" + student.getId());
 
         rows.add(List.of(marks));
@@ -821,7 +823,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         rows.add(List.of(addTraining));
 
         InlineKeyboardButton exitCoach = new InlineKeyboardButton();
-        exitCoach.setText("Выйти из аккаунта \uD83D\uDE35\n");
+        exitCoach.setText("Выйти из аккаунта \uD83D\uDEAA\n");
         exitCoach.setCallbackData("EXITCOACH_" + coach.getId());
         rows.add(List.of(exitCoach));
 
