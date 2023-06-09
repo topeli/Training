@@ -41,6 +41,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final static ConcurrentHashMap<Long, Student> userStudent = new ConcurrentHashMap<>();
     private final static ConcurrentHashMap<Long, Coach> userCoach = new ConcurrentHashMap<>();
     private final static ConcurrentHashMap<Long, Training> coachTraining = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<Long, Student> admin = new ConcurrentHashMap<>();
 
 
     private final static ConcurrentHashMap<Long, UserCondition> userCondition = new ConcurrentHashMap<>();
@@ -120,6 +121,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                         switch (userCondition.get(chatId)) {
                             case WAITING_FOR_PASSWORD -> checkPassword(messageText, chatId);
                             case WAITING_FOR_PASSWORD_COACH -> checkPasswordCoach(messageText, chatId);
+                            case WAITING_FOR_PASSWORD_ADMIN -> checkPasswordAdmin(messageText,chatId);
+                            case WAITING_FOR_NAME_STUDENT_ADMIN -> addNameStudentAdmin(messageText);
                             default -> sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
 
                         }
@@ -397,7 +400,82 @@ public class TelegramBot extends TelegramLongPollingBot {
                 studentRepository.save(student);
                 executeEditMessageText("Вы вышли из аккаунта", chatId, messageId);
                 displayMainMenu(chatId);
+            } else if (callbackData.startsWith("REGADMIN_")) {
+                    userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD_ADMIN);
+
+                    executeEditMessageText("Введите пароль:", chatId, messageId);
             }
+            else if(callbackData.startsWith("ADDSTUDENTADMIN_")){
+                getGroups(chatId, "VVODNAMESTUDENT_");
+                Long studentId = Long.valueOf(extractCallBackData(callbackData));
+
+                chosenStudent.put(chatId, studentId);
+
+                Student student = studentRepository.findById(studentId).orElseThrow();
+            }
+            else if(callbackData.startsWith("VVODNAMESTUDENT_")){
+                sendMessage(chatId, "Введите имя:");
+                userCondition.put(chatId, UserCondition.WAITING_FOR_NAME_STUDENT_ADMIN);
+
+            }
+
+        }
+    }
+    private void addNameStudentAdmin(String message){
+        Student student = admin.get(message);
+        student.setId(14L);
+        student.setSurname("dfghjk");
+        student.setAge(1111234);
+        student.setChatId(null);
+        student.setPassword("ыыыы");
+        student.setName(message);
+        student.setClassGroup("11");
+        studentRepository.save(student);
+       /* student.setName(message);
+        sendMessage(chatId, "Введите фамилию");
+        student.setSurname(surname);
+       // student.setAge(age);
+        student.setPassword(password);
+        studentRepository.save(student);*/
+    }
+    private void checkPasswordAdmin(String messageText, Long chatId) {
+        if(messageText.equals("capibara"))
+        {sendMessage(chatId,"Пароль верный!");
+            displayAdminMenu(chatId);
+        }
+        else sendMessage(chatId,"Иди отсюда импостер");
+    }
+
+    private void displayAdminMenu(Long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выберите действие:");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton addStudent = new InlineKeyboardButton();
+        addStudent.setText("Добавить ученика в группу \uD83E\uDE84\n");
+        addStudent.setCallbackData("ADDSTUDENTADMIN_");
+        rows.add(List.of(addStudent));
+
+        InlineKeyboardButton addCoach = new InlineKeyboardButton();
+        addCoach.setText("Добавить тренера \uD83E\uDE84\n");
+        addCoach.setCallbackData("ADDCOACHADMIN_");
+        rows.add(List.of(addCoach));
+
+        InlineKeyboardButton exitAdmin = new InlineKeyboardButton();
+        exitAdmin.setText("Выйти из аккаунта \uD83E\uDEE1\n");
+        exitAdmin.setCallbackData("EXITADMIN_");
+        rows.add(List.of(exitAdmin));
+
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при выводе меню студента:" + e.getMessage());
         }
     }
 
@@ -776,6 +854,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         regCoach.setText("Зарегистрироваться как тренер \uD83D\uDDFF\n");
         regCoach.setCallbackData("REGCOACH_");
         rows.add(List.of(regCoach));
+        InlineKeyboardButton regAdmin = new InlineKeyboardButton();
+        regAdmin.setText("Зарегистрироваться как админ \uD83D\uDE0E\n");
+        regAdmin.setCallbackData("REGADMIN_");
+        rows.add(List.of(regAdmin));
+
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
 
