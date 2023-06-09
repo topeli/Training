@@ -723,10 +723,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
         List<String> groups = studentRepository.findDifferentGroups();
         for (int i = 0; i < groups.size(); i++) {
-            InlineKeyboardButton group = new InlineKeyboardButton();
-            group.setText(groups.get(i));
-            group.setCallbackData(callbackData + groups.get(i));
-            buttonsInLine.add(group);
+            if (groups.get(i) != null) {
+                InlineKeyboardButton group = new InlineKeyboardButton();
+                group.setText(groups.get(i));
+                group.setCallbackData(callbackData + groups.get(i));
+                buttonsInLine.add(group);
+            }
         }
         InlineKeyboardButton nazad = new InlineKeyboardButton();
         nazad.setText("↩️");
