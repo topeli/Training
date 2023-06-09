@@ -454,7 +454,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             timeOfTraining = timeOfTraining.plusHours(1L);
-            if(canStart(timeOfTraining, chosenDate, groupTrainings)){
+            if(canEnd(timeOfTraining, chosenDate, groupTrainings)){
             InlineKeyboardButton time = new InlineKeyboardButton();
             time.setText(timeOfTraining.toString());
             time.setCallbackData(callbackData + timeOfTraining);
@@ -523,6 +523,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                     return false;
                 }
                 if (timeOfTraining.equals(training.getStartTime())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    private boolean canEnd(LocalTime timeOfTraining, LocalDate chosenDate, List<Training> groupTrainings) {
+        for (Training training : groupTrainings) {
+            if (training.getDate().equals(chosenDate)) {
+                log.info("Даты совпали!");
+                if (timeOfTraining.isAfter(training.getStartTime())) {
                     return false;
                 }
             }
