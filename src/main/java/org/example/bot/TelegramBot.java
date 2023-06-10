@@ -41,8 +41,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final static ConcurrentHashMap<Long, Student> userStudent = new ConcurrentHashMap<>();
     private final static ConcurrentHashMap<Long, Coach> userCoach = new ConcurrentHashMap<>();
     private final static ConcurrentHashMap<Long, Training> coachTraining = new ConcurrentHashMap<>();
-    private final static ConcurrentHashMap<Long, Student> admin = new ConcurrentHashMap<>();
-
+    private final static ConcurrentHashMap<Long, Student> adminStudent = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<Long, Coach> adminCoach = new ConcurrentHashMap<>();
 
     private final static ConcurrentHashMap<Long, UserCondition> userCondition = new ConcurrentHashMap<>();
 
@@ -122,7 +122,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                             case WAITING_FOR_PASSWORD -> checkPassword(messageText, chatId);
                             case WAITING_FOR_PASSWORD_COACH -> checkPasswordCoach(messageText, chatId);
                             case WAITING_FOR_PASSWORD_ADMIN -> checkPasswordAdmin(messageText, chatId);
-                            case WAITING_FOR_NAME_STUDENT_ADMIN -> addNameStudentAdmin(messageText);
+                            case WAITING_FOR_NAME_STUDENT_ADMIN -> addNameStudentAdmin(messageText,chatId);
+                            case WAITING_FOR_SURNAME_STUDENT_ADMIN -> addSurnameStudentAdmin(messageText, chatId);
                             default -> sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
 
                         }
@@ -407,31 +408,35 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 getGroups(chatId, "VVODNAMESTUDENT_");
 
-            } else if (callbackData.startsWith("VVODNAMESTUDENT_")) {
-                sendMessage(chatId, "Введите имя:");
-                userCondition.put(chatId, UserCondition.WAITING_FOR_NAME_STUDENT_ADMIN);
 
+            } else if (callbackData.startsWith("VVODNAMESTUDENT_")) {
+                String callback = extractCallBackData(callbackData);
+                if(callback=="назад") {
+                    displayAdminMenu(chatId);
+                }
+                else {
+                    sendMessage(chatId, "Введите имя:");
+                    userCondition.put(chatId, UserCondition.WAITING_FOR_NAME_STUDENT_ADMIN);
+                }
             }
 
         }
     }
 
-    private void addNameStudentAdmin(String message) {
-        Student student = admin.get(message);
-        student.setId(14L);
-        student.setSurname("dfghjk");
-        student.setAge(1111234);
-        student.setChatId(null);
-        student.setPassword("ыыыы");
+    private void addSurnameStudentAdmin(String messageText, Long chatId) {
+        Student student = adminStudent.get(chatId);
+        student.setSurname(messageText);
+        adminStudent.put(chatId,student);
+        sendMessage(chatId, "Введите возраст");
+        userCondition.put(chatId,UserCondition.WAITING_FOR_AGE_STUDENT_ADMIN);
+    }
+
+    private void addNameStudentAdmin(String message, Long chatId) {
+        Student student = new Student();
         student.setName(message);
-        student.setClassGroup("11");
-        studentRepository.save(student);
-       /* student.setName(message);
+        adminStudent.put(chatId, student);
         sendMessage(chatId, "Введите фамилию");
-        student.setSurname(surname);
-       // student.setAge(age);
-        student.setPassword(password);
-        studentRepository.save(student);*/
+        userCondition.put(chatId,UserCondition.WAITING_FOR_SURNAME_STUDENT_ADMIN);
     }
 
     private void checkPasswordAdmin(String messageText, Long chatId) {
