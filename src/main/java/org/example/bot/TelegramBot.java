@@ -124,6 +124,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                             case WAITING_FOR_PASSWORD_ADMIN -> checkPasswordAdmin(messageText, chatId);
                             case WAITING_FOR_NAME_STUDENT_ADMIN -> addNameStudentAdmin(messageText,chatId);
                             case WAITING_FOR_SURNAME_STUDENT_ADMIN -> addSurnameStudentAdmin(messageText, chatId);
+                            case WAITING_FOR_AGE_STUDENT_ADMIN -> addAgeStudentAdmin(messageText, chatId);
+                            case WAITING_FOR_PASSWORD_STUDENT_ADMIN -> addPasswordStudentAdmin(messageText, chatId);
+                            case WAITING_FOR_NAME_COACH_ADMIN -> addNameCoachAdmin(messageText, chatId);
+                            case WAITING_FOR_SURNAME_COACH_ADMIN -> addSurnameCoachAdmin(messageText, chatId);
+                            case WAITING_FOR_AGE_COACH_ADMIN -> addAgeCoachAdmin(messageText, chatId);
+                            case WAITING_FOR_EXPERIENCE_COACH_ADMIN -> addExperienceCoachAdmin(messageText, chatId);
+                            case WAITING_FOR_PASSWORD_COACH_ADMIN -> addPasswordCoachAdmin(messageText, chatId);
                             default -> sendMessage(chatId, "То что вы прислали не соответствует ни одной команде");
 
                         }
@@ -171,9 +178,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     userStudent.put(chatId, student);
                     userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD);
 
-                    sendMessage(chatId, "Введите пароль:");
+                    sendMessage(chatId, "Введите пароль для входа в аккаунт:");
                 } else {
-                    String nazad = extractCallBackData(callbackData);
+                    String nazad;
                     nazad = "Вы вернулись в назад";
 
                     executeEditMessageText(nazad, chatId, messageId);
@@ -194,7 +201,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     userCoach.put(chatId, coach);
                     userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD_COACH);
 
-                    sendMessage(chatId, "Введите пароль:");
+                    sendMessage(chatId, "Введите пароль для входа в аккаунт:");
                 } else {
                     String nazad = extractCallBackData(callbackData);
                     nazad = "Вы вернулись в назад";
@@ -402,8 +409,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 displayMainMenu(chatId);
             } else if (callbackData.startsWith("REGADMIN_")) {
                 userCondition.put(chatId, UserCondition.WAITING_FOR_PASSWORD_ADMIN);
-
-                executeEditMessageText("Введите пароль:", chatId, messageId);
+                executeEditMessageText("Выбрана роль: админ", chatId, messageId);
+                sendMessage(chatId, "Введите пароль:");
             } else if (callbackData.startsWith("ADDSTUDENTADMIN_")) {
 
                 getGroups(chatId, "VVODNAMESTUDENT_");
@@ -415,27 +422,170 @@ public class TelegramBot extends TelegramLongPollingBot {
                     displayAdminMenu(chatId);
                 }
                 else {
-                    sendMessage(chatId, "Введите имя:");
+                    sendMessage(chatId, "Введите имя нового ученика: ");
+                    executeEditMessageText("Выбрана группа: " + extractCallBackData(callbackData), chatId, messageId);
+                    Student student = new Student();
+                    student.setClassGroup(callback);
+                    adminStudent.put(chatId,student);
                     userCondition.put(chatId, UserCondition.WAITING_FOR_NAME_STUDENT_ADMIN);
                 }
             }
+            else if(callbackData.startsWith("ADDCOACHADMIN_")) {
+                executeEditMessageText("Введите имя нового тренера:", chatId, messageId);
+                Coach coach = new Coach();
+                adminCoach.put(chatId,coach);
+                userCondition.put(chatId, UserCondition.WAITING_FOR_NAME_COACH_ADMIN);
 
+            }
+            else if(callbackData.startsWith("CHOOSEGROUPSFORCOACH_"))
+            {
+                executeEditMessageText("Выбрана группа: "+ extractCallBackData(callbackData), chatId, messageId);
+                Coach coach = adminCoach.get(chatId);
+                String callback = extractCallBackData(callbackData);
+                coach.setClassGroups(callback);
+                displayActivitiesMenu(chatId,"SETPASSWORDCOACH_");
+            }
+            else if(callbackData.startsWith("SETPASSWORDCOACH_")){
+                Coach coach = adminCoach.get(chatId);
+                coach.setActivity(extractCallBackData(callbackData));
+                adminCoach.put(chatId, coach);
+                sendMessage(chatId, "Введите пароль для тренера:");
+                executeEditMessageText("Тренер преподает: " + extractCallBackData(callbackData), chatId, messageId);
+                userCondition.put(chatId,UserCondition.WAITING_FOR_PASSWORD_COACH_ADMIN);
+            }
+            else if(callbackData.startsWith("EXITADMIN_"))
+            {
+                executeEditMessageText("Вы вышли из аккаунта админа", chatId, messageId);
+                displayMainMenu(chatId);
+            }
         }
+    }
+
+    private void addPasswordCoachAdmin(String messageText, Long chatId) {
+        Coach coach = adminCoach.get(chatId);
+        coach.setPasswordCoach(messageText);
+        adminCoach.put(chatId,coach);
+        coachRepository.save(coach);
+        sendMessage(chatId, "Тренер сохранен");
+        displayAdminMenu(chatId);
+    }
+
+    private void displayActivitiesMenu(Long chatId, String callbackData) {//222222222222222
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Выбор активности, которую преподает тренер:");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> buttonsInLines = new ArrayList<>();
+            List<InlineKeyboardButton> buttonsInLine = new ArrayList<>();
+            InlineKeyboardButton afk = new InlineKeyboardButton();
+            afk.setText("АФК\uD83D\uDEFC");
+            afk.setCallbackData(callbackData + afk.getText());
+            buttonsInLine.add(afk);
+        InlineKeyboardButton football = new InlineKeyboardButton();
+        football.setText("Футбол⚽");
+        football.setCallbackData(callbackData + football.getText());
+        buttonsInLine.add(football);
+        InlineKeyboardButton kik = new InlineKeyboardButton();
+        kik.setText("Кикбоксинг\uD83E\uDD4A");
+        kik.setCallbackData(callbackData + kik.getText());
+        buttonsInLine.add(kik);
+        InlineKeyboardButton swim = new InlineKeyboardButton();
+        swim.setText("Плавание\uD83D\uDC33");
+        swim.setCallbackData(callbackData + swim.getText());
+        buttonsInLine.add(swim);
+        InlineKeyboardButton basket = new InlineKeyboardButton();
+        basket.setText("Баскетбол\uD83C\uDFC0");
+        basket.setCallbackData(callbackData + basket.getText());
+        buttonsInLine.add(basket);
+        InlineKeyboardButton sam = new InlineKeyboardButton();
+        sam.setText("Самбо\uD83E\uDD3C");
+        sam.setCallbackData(callbackData + sam.getText());
+        buttonsInLine.add(sam);
+        InlineKeyboardButton gym = new InlineKeyboardButton();
+        gym.setText("Тренажерный-зал\uD83C\uDFCB️");
+        gym.setCallbackData(callbackData + gym.getText());
+        buttonsInLine.add(gym);
+        InlineKeyboardButton fight = new InlineKeyboardButton();
+        fight.setText("Вольная-борьба \uD83E\uDD1C");
+        fight.setCallbackData(callbackData + fight.getText());
+        buttonsInLine.add(fight);
+        rowsInLine.add(buttonsInLine);
+        InlineKeyboardButton nazad = new InlineKeyboardButton();
+        nazad.setText("↩️");
+        nazad.setCallbackData(callbackData + "назад");
+        buttonsInLines.add(nazad);
+        rowsInLine.add(buttonsInLines);
+        markup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(markup);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("ошибка");
+        }
+    }
+
+    private void addExperienceCoachAdmin(String messageText, Long chatId) {
+        Coach coach = adminCoach.get(chatId);
+        coach.setExperience(Long.valueOf(messageText));
+        adminCoach.put(chatId, coach);
+        getGroups(chatId, "CHOOSEGROUPSFORCOACH_");
+    }
+
+    private void addAgeCoachAdmin(String messageText, Long chatId) {
+        Coach coach = adminCoach.get(chatId);
+        coach.setAge(Long.valueOf(messageText));
+        adminCoach.put(chatId, coach);
+        sendMessage(chatId, "Введите опыт работы тренера:");
+        userCondition.put(chatId,UserCondition.WAITING_FOR_EXPERIENCE_COACH_ADMIN);
+    }
+
+    private void addSurnameCoachAdmin(String messageText, Long chatId) {
+        Coach coach = adminCoach.get(chatId);
+        coach.setSurname(messageText);
+        adminCoach.put(chatId, coach);
+        sendMessage(chatId, "Введите возраст:");
+        userCondition.put(chatId,UserCondition.WAITING_FOR_AGE_COACH_ADMIN);
+    }
+
+    private void addNameCoachAdmin(String messageText, Long chatId) {
+        Coach coach = adminCoach.get(chatId);
+        coach.setName(messageText);
+        adminCoach.put(chatId, coach);
+        sendMessage(chatId, "Введите фамилию:");
+        userCondition.put(chatId,UserCondition.WAITING_FOR_SURNAME_COACH_ADMIN);
+    }
+
+    private void addPasswordStudentAdmin(String messageText, Long chatId) {
+        Student student = adminStudent.get(chatId);
+        student.setPassword(messageText);
+        adminStudent.put(chatId,student);
+        studentRepository.save(student);
+        sendMessage(chatId, "Студент сохранен");
+        displayAdminMenu(chatId);
+    }
+
+    private void addAgeStudentAdmin(String messageText, Long chatId) {
+        Student student = adminStudent.get(chatId);
+        student.setAge(Integer.parseInt(messageText));
+        adminStudent.put(chatId,student);
+        sendMessage(chatId, "Введите пароль для студента:");
+        userCondition.put(chatId,UserCondition.WAITING_FOR_PASSWORD_STUDENT_ADMIN);
     }
 
     private void addSurnameStudentAdmin(String messageText, Long chatId) {
         Student student = adminStudent.get(chatId);
         student.setSurname(messageText);
         adminStudent.put(chatId,student);
-        sendMessage(chatId, "Введите возраст");
+        sendMessage(chatId, "Введите возраст:");
         userCondition.put(chatId,UserCondition.WAITING_FOR_AGE_STUDENT_ADMIN);
     }
 
     private void addNameStudentAdmin(String message, Long chatId) {
-        Student student = new Student();
+        Student student = adminStudent.get(chatId);
         student.setName(message);
         adminStudent.put(chatId, student);
-        sendMessage(chatId, "Введите фамилию");
+        sendMessage(chatId, "Введите фамилию:");
         userCondition.put(chatId,UserCondition.WAITING_FOR_SURNAME_STUDENT_ADMIN);
     }
 

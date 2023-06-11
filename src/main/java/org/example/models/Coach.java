@@ -26,11 +26,12 @@ public class Coach {
     private String classGroups;
     private String activity;
 
-    public Coach(String name, String surname, Long age, String activity, Long e) {
+    public Coach(String name, String surname, Long age, String activity, String passwordCoach, Long e) {
         this.name = name;
         this.surname=surname;
         this.age = age;
         this.activity = activity;
         this.experience = e;
+        this.passwordCoach = passwordCoach;
     }
 }
