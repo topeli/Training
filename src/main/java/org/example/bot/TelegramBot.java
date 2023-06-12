@@ -411,7 +411,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Training> trainings = trainingRepository.trainingByCoachId(coachId);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
-                    message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "дата: " + String.valueOf(training.getDate()) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
+                    message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + String.valueOf(training.getDate().getMonth().ordinal() + 1)
+                    + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
                 }
                 executeEditMessageText(message, chatId, messageId);
                 displayCoachMenu(chatId);
@@ -420,7 +421,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Training> trainings = trainingRepository.trainingByClassGroup(group);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
-                    message += "\uD83C\uDD98" + "Дата: " + String.valueOf(training.getDate()) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
+                    message += "\uD83C\uDD98" + "Дата: " + training.getDate().getDayOfMonth() + "." + String.valueOf(training.getDate().getMonth().ordinal() + 1) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
                 }
                 sendMessage(chatId, message);
                 executeEditMessageText("Отображаем тренировки", chatId, messageId);
