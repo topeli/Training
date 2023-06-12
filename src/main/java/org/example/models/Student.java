@@ -18,7 +18,8 @@ public class Student {
     private String name;
     private String surname;
     private int age;
-    private String classGroup;    private String password;
+    private String classGroup;
+    private String password;
     private Long chatId;
     public Student(String name, String surname, int age, String classGroup) {
         this.name = name;

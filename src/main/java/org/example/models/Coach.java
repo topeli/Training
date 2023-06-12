@@ -34,4 +34,12 @@ public class Coach {
         this.experience = e;
         this.passwordCoach = passwordCoach;
     }
+
+    @Override
+    public String toString() {
+        return "Coach{" +
+                "name='" + name + '\'' +
+                ", surname='" + surname + '\'' +
+                '}';
+    }
 }
