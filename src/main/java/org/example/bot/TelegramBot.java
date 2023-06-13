@@ -27,6 +27,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -234,13 +235,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String message = "Мои оценки:" + '\n' + '\n';
                 for (Map.Entry<String, List<Integer>> entry : activityMark.entrySet()) {
                     message += entry.getKey() + ":" + '\n';
-                    double sum = 0;
+                    float sum = 0;
                     for (int i = 0; i < entry.getValue().size(); i++) {
                         message += entry.getValue().get(i) + " ";
                         sum += entry.getValue().get(i);
                     }
                     message += '\n';
-                    message += "Средний балл: " + (sum / entry.getValue().size());
+                    String formattedDouble = new DecimalFormat("#0.00").format(sum / entry.getValue().size());
+                    message += "Средний балл: " + formattedDouble;
                     message += '\n';
                     message += '\n';
 
@@ -406,8 +408,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Training> trainings = trainingRepository.trainingByCoachId(coachId);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
-                    message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + String.valueOf(training.getDate().getMonth().ordinal() + 1)
-                            + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
+                    message += "\uD83C\uDD98" + "Группа: " + String.valueOf(training.getClassGroup()) + "\n" + "тренировка: " + training.getActivity() + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + String.valueOf(training.getDate().getMonth().ordinal() + 1)
+                            + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n" + "\n";
                 }
                 executeEditMessageText(message, chatId, messageId);
                 displayCoachMenu(chatId);
@@ -416,7 +418,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Training> trainings = trainingRepository.trainingByClassGroup(group);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
-                    message += "\uD83C\uDD98" + "Дата: " + training.getDate().getDayOfMonth() + "." + String.valueOf(training.getDate().getMonth().ordinal() + 1) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n";
+                    message += "\uD83C\uDD98" + "Тренировка: " + training.getActivity() + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + String.valueOf(training.getDate().getMonth().ordinal() + 1) + " время: " + String.valueOf(training.getStartTime()) + "-" + String.valueOf(training.getEndTime()) + "\n" + "\n";
                 }
                 sendMessage(chatId, message);
                 executeEditMessageText("Отображаем тренировки", chatId, messageId);
@@ -1385,13 +1387,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         String answer = "Привет, " + firstName + "! Это бот для ДЮСШ-2. У него есть разные возможности как для тренера, так и для спортсменов. Можете ознакомиться с ними:\n\n Для тренера:\n" +
                 "\uD83D\uDC94добавлять тренировки  \n" +
                 "\uD83D\uDC94смотреть свои тренировки  \n" +
-                "\uD83D\uDC94отмечать список детей, пришедших на тренировку  \n" +
-                "\uD83D\uDC94получать уведомления (за день или за час до тренировки) \n" +
+                "\uD83D\uDC94получать уведомления (напоминания) о тренировках (за день до тренировки) \n" +
+                "\uD83D\uDC94просматривать свои группы \n" +
                 "\uD83D\uDC94ставить оценки за тренировку \n\n" +
                 "Для ученика:  \n" +
-                "\uD83D\uDC94получать уведомления (за день или за час до тренировки) \n" +
+                "\uD83D\uDC94получать уведомления (за день до тренировки) \n" +
+                "\uD83D\uDC94получать уведомления о добавлении оценки \n" +
                 "\uD83D\uDC94просматривать расписание \n" +
-                "\uD83D\uDC94просматривать свои оценки";
+                "\uD83D\uDC94просматривать свои оценки\n\n" +
+                "Если вы админ: \n" +
+                "\uD83D\uDC94добавлять нового тренера \n" +
+                "\uD83D\uDC94добавлять нового ученика в конкретную группу \n";
 
         sendMessage(chatId, answer);
     }
@@ -1431,7 +1437,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         if (mark1.getStudent().getChatId() != null) {
             String text =
-                    "Тренер " + mark1.getCoach().getName() + " " + mark1.getCoach().getSurname() + " поставил вам оценку " + mark + " по предмету " + activity;
+                    "Тренер: " + mark1.getCoach().getName() + " " + mark1.getCoach().getSurname() + "\n"+"поставил вам оценку: " + mark + "\n"+ "по предмету: " + activity;
             sendMessage(mark1.getStudent().getChatId(), text);
         }
     }
