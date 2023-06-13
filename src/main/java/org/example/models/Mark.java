@@ -31,6 +31,7 @@ public class Mark {
     private Coach coach;
 
     private int mark;
+    private String activity;
 
     public Mark(int mark) {
         this.mark = mark;

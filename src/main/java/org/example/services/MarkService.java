@@ -29,8 +29,9 @@ public class MarkService {
         this.coachRepository = coachRepository;
     }
 
-    public Mark addMark(int mark, Coach coach, Long studentId) throws Exception {
+    public Mark addMark(int mark, Coach coach, Long studentId, String activity) throws Exception {
         Mark mark1 = new Mark(mark);
+        mark1.setActivity(activity);
         try {
             Student student = studentRepository.findById(studentId).orElseThrow();
             mark1.setStudent(student);
