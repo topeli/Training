@@ -146,10 +146,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 chosenStudent.put(chatId, studentId);
 
                 сhooseActivity(chatId, "CHOOSEMARK_");
+                executeEditMessageText("Выберите активность и студента", chatId, messageId);
+
             } else if (callbackData.startsWith("CHOOSEMARK_")) {
                 String activity = extractCallBackData(callbackData);
                 Student student = studentRepository.findById(chosenStudent.get(chatId)).orElseThrow();
-
                 if (activity.equals("назад")) {
                     displayCommandsForCoach(chatId, String.valueOf(student.getId()));
                 } else {
@@ -161,6 +162,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     chooseMark(chatId);
                 }
+
+
             } else if (callbackData.startsWith("MARK_")) {
                 try {
                     Integer mark = Integer.valueOf(extractCallBackData(callbackData));
@@ -231,7 +234,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 String message = "Мои оценки:" + '\n' + '\n';
                 for (Map.Entry<String, List<Integer>> entry : activityMark.entrySet()) {
                     message += entry.getKey() + ":" + '\n';
-                    int sum = 0;
+                    double sum = 0;
                     for (int i = 0; i < entry.getValue().size(); i++) {
                         message += entry.getValue().get(i) + " ";
                         sum += entry.getValue().get(i);
@@ -493,6 +496,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+
     private void addPasswordCoachAdmin(String messageText, Long chatId) {
         if (messageText.equals("1")) {
             displayActivitiesMenu(chatId, "SETPASSWORDCOACH_");
@@ -695,7 +699,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (messageText.equals("capibara")) {
             sendMessage(chatId, "Пароль верный!");
             displayAdminMenu(chatId);
-        } else sendMessage(chatId, "Иди отсюда импостер");
+        } else  sendMessage(chatId, "Пароль неверный! Попробуйте снова...");
     }
 
     private void getGroupsForAdmin(Long chatId, String callbackData) {

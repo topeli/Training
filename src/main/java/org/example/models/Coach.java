@@ -13,6 +13,7 @@ import javax.persistence.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class Coach {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
