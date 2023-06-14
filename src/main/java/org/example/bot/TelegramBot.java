@@ -103,7 +103,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendMessage(chatId, "Вы уже зарегистрированы");
                         log.info("Хотим отобразить главное меню...");
                         studentOrCoachMenu(chatId);
-
                     }
 
                     break;
@@ -418,7 +417,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Training> trainings = trainingRepository.trainingByCoachId(coachId);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
-                    message += "\uD83C\uDD98" + "Группа: " + training.getClassGroup() + "\n" + "тренировка: " + training.getActivity() + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + training.getDate().getMonth().ordinal() + 1
+                    message += "\uD83C\uDD98" + "Группа: " + training.getClassGroup() + "\n" + "тренировка: " + training.getActivity() + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + (training.getDate().getMonth().ordinal() + 1)
                             + " время: " + training.getStartTime()+ "-" + training.getEndTime() + "\n" + "\n";
                 }
                 executeEditMessageText(message, chatId, messageId);
@@ -428,7 +427,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 List<Training> trainings = trainingRepository.trainingByClassGroup(group);
                 String message = "Мои тренировки:  \n";
                 for (Training training : trainings) {
-                    message += "\uD83C\uDD98" + "Тренировка: " + training.getActivity() + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + training.getDate().getMonth().ordinal() + 1 + " время: " + training.getStartTime() + "-" + training.getEndTime() + "\n" + "\n";
+                    message += "\uD83C\uDD98" + "Тренировка: " + training.getActivity() + "\n" + "дата: " + training.getDate().getDayOfMonth() + "." + (training.getDate().getMonth().ordinal() + 1) + " время: " + training.getStartTime() + "-" + training.getEndTime() + "\n" + "\n";
                 }
                 executeEditMessageText(message, chatId, messageId);
                 displayStudentMenu(chatId);
@@ -1007,8 +1006,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         for (int i = 0; i < 7; i++) {
             currentDate = currentDate.plusDays(1L);
             InlineKeyboardButton date = new InlineKeyboardButton();
-            date.setText(currentDate.getDayOfMonth() + "." + currentDate.getMonth().ordinal() + 1);
-            date.setCallbackData(callbackData + currentDate.getDayOfMonth() + "." + currentDate.getMonth().ordinal() + 1);
+            date.setText(currentDate.getDayOfMonth() + "." + (currentDate.getMonth().ordinal() + 1));
+            date.setCallbackData(callbackData + currentDate.getDayOfMonth() + "." + (currentDate.getMonth().ordinal() + 1));
             buttonsInLine.add(date);
         }
         InlineKeyboardButton nazad = new InlineKeyboardButton();
@@ -1458,7 +1457,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String text = "Вам добавили тренировку:\n" +
                 "Вид тренировки: " + training.getActivity() + "\n" +
-                "Дата: " + training.getDate() + "\n" +
+                "Дата: " + training.getDate().getDayOfMonth() + "." + (training.getDate().getMonth().ordinal() + 1)  + "\n" +
                 "Время: " + training.getStartTime() + " " + training.getEndTime() + "\n" +
                 "Тренер: " + training.getCoach().getName() + " " + training.getCoach().getSurname();
 
@@ -1478,14 +1477,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 if (trainings.get(i).getCoach().getChatId() != null) {
                     String textForCoach = "Завтра у вас тренировка:\n" +
                             "Вид тренировки: " + trainings.get(i).getActivity() + "\n" +
-                            "Дата: " + trainings.get(i).getDate() + "\n" +
+                            "Дата: " + trainings.get(i).getDate().getDayOfMonth() + "." + (trainings.get(i).getDate().getMonth().ordinal() + 1)  + "\n" +
                             "Время: " + trainings.get(i).getStartTime() + " " + trainings.get(i).getEndTime() + "\n" +
                             "Группа: " + trainings.get(i).getClassGroup();
                     sendMessage(trainings.get(i).getCoach().getChatId(), textForCoach);
                 }
                 String text = "Завтра у вас тренировка:\n" +
                         "Вид тренировки: " + trainings.get(i).getActivity() + "\n" +
-                        "Дата: " + trainings.get(i).getDate() + "\n" +
+                        "Дата: " + trainings.get(i).getDate().getDayOfMonth() + "." + (trainings.get(i).getDate().getMonth().ordinal() + 1)   + "\n" +
                         "Время: " + trainings.get(i).getStartTime() + " " + trainings.get(i).getEndTime() + "\n" +
                         "Тренер: " + trainings.get(i).getCoach().getName() + " " + trainings.get(i).getCoach().getSurname();
 
